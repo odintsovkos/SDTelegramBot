@@ -20,3 +20,5 @@ Stable Diffusion Local Telegram Bot
 4. В папке с ботом создать файл .env и заполнить поля как в примере .env.dist
 5. Запустить файл "start_bot.bat"
 6. Если всё сделано правильно, то в Телеграм придет сообщение "Бот Запущен", тем ID которые были указаны
+
+![zX4mjBk65k4](https://github.com/odintsovkos/SDTelegramBot/assets/16336122/61fdb963-8557-4451-ac06-8f52add31a4f)
