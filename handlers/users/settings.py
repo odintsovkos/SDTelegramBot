@@ -12,7 +12,7 @@ from utils.sd_api import api_service
 
 
 @dp.message_handler(Text(equals="Назад"), state=SDStates.settings)
-async def cancel_menu(message: Message, state: FSMContext):
+async def cancel_button_handler(message: Message, state: FSMContext):
     await state.finish()
     await message.answer("Действие отменено", reply_markup=keyboards.main_menu)
     await SDStates.enter_prompt.set()
@@ -25,13 +25,13 @@ async def settings_command_handler(message: Message, state: FSMContext):
 
 
 @dp.message_handler(state=SDStates.settings, content_types=types.ContentTypes.TEXT)
-async def answer_from_location(message: types.Message, state: FSMContext):
+async def settings_buttons_handler(message: types.Message):
     if message.text == "Negative Prompt":
         await message.answer(f"Напиши Negative prompt", reply_markup=keyboards.cancel)
         await SDStates.settings_set_n_prompt.set()
     elif message.text == "Sampler":
-        sampler_keyb = create_keyboard('samplers', 'name')
-        await message.answer(f"Выбери Sampler", reply_markup=sampler_keyb)
+        samplers_keyboards = create_keyboard('samplers', 'name')
+        await message.answer(f"Выбери Sampler", reply_markup=samplers_keyboards)
         await SDStates.settings_set_sampler.set()
     elif message.text == "Steps":
         await message.answer(f"Введи количество шагов генерации", reply_markup=keyboards.cancel)
@@ -69,7 +69,7 @@ async def answer_from_location(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(state=SDStates.settings_set_n_prompt, content_types=types.ContentTypes.TEXT)
-async def cancel_menu(message: Message, state: FSMContext):
+async def nprompt_button_handler(message: Message, state: FSMContext):
     await state.finish()
     db_set_sd_settings(message.from_user.id, "sd_n_prompt", message.text)
     await message.answer("Negative prompt установлен", reply_markup=keyboards.settings)
@@ -77,7 +77,7 @@ async def cancel_menu(message: Message, state: FSMContext):
 
 
 @dp.message_handler(state=SDStates.settings_set_sampler, content_types=types.ContentTypes.TEXT)
-async def cancel_menu(message: Message, state: FSMContext):
+async def sampler_button_handler(message: Message, state: FSMContext):
     await state.finish()
     db_set_sd_settings(message.from_user.id, "sd_sampler", message.text)
     await message.answer("Sampler установлен", reply_markup=keyboards.settings)
@@ -85,7 +85,7 @@ async def cancel_menu(message: Message, state: FSMContext):
 
 
 @dp.message_handler(state=SDStates.settings_set_steps, content_types=types.ContentTypes.TEXT)
-async def cancel_menu(message: Message, state: FSMContext):
+async def steps_button_handler(message: Message, state: FSMContext):
     await state.finish()
     db_set_sd_settings(message.from_user.id, "sd_steps", int(message.text))
     await message.answer("Количество шагов задано", reply_markup=keyboards.settings)
@@ -93,7 +93,7 @@ async def cancel_menu(message: Message, state: FSMContext):
 
 
 @dp.message_handler(state=SDStates.settings_set_wh, content_types=types.ContentTypes.TEXT)
-async def cancel_menu(message: Message, state: FSMContext):
+async def wh_button_handler(message: Message, state: FSMContext):
     await state.finish()
     db_set_sd_settings(message.from_user.id, "sd_width_height", message.text)
     await message.answer("Высота и ширина заданы", reply_markup=keyboards.settings)
@@ -101,7 +101,7 @@ async def cancel_menu(message: Message, state: FSMContext):
 
 
 @dp.message_handler(state=SDStates.settings_set_cfg_scale, content_types=types.ContentTypes.TEXT)
-async def cancel_menu(message: Message, state: FSMContext):
+async def cfg_scale_button_handler(message: Message, state: FSMContext):
     await state.finish()
     db_set_sd_settings(message.from_user.id, "sd_cfg_scale", int(message.text))
     await message.answer("CFG Scale задан", reply_markup=keyboards.settings)
@@ -109,7 +109,7 @@ async def cancel_menu(message: Message, state: FSMContext):
 
 
 @dp.message_handler(state=SDStates.settings_set_restore_face, content_types=types.ContentTypes.TEXT)
-async def cancel_menu(message: Message, state: FSMContext):
+async def restore_face_button_handler(message: Message, state: FSMContext):
     await state.finish()
     db_set_sd_settings(message.from_user.id, "sd_restore_face", int(message.text))
     if message.text == 1:
@@ -122,7 +122,7 @@ async def cancel_menu(message: Message, state: FSMContext):
 
 
 @dp.message_handler(state=SDStates.settings_set_batch_count, content_types=types.ContentTypes.TEXT)
-async def cancel_menu(message: Message, state: FSMContext):
+async def batch_count_button_handler(message: Message, state: FSMContext):
     await state.finish()
     db_set_sd_settings(message.from_user.id, "sd_batch_count", int(message.text))
     await message.answer("Batch count задан", reply_markup=keyboards.settings)
