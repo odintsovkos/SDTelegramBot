@@ -2,6 +2,7 @@ from aiogram import executor
 
 from loader import dp
 import middlewares, handlers
+from utils.db_services import db_service
 from utils.misc_func import is_sd_launched
 from utils.notify_admins import on_startup_notify
 from utils.set_bot_commands import set_default_commands

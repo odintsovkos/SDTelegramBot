@@ -2,6 +2,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 
 
 class SDStates(StatesGroup):
+    waiting_for_authorization = State()
     enter_prompt = State()
     settings = State()
     settings_set_model = State()

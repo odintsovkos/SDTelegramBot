@@ -1,5 +1,13 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
+auth_menu = ReplyKeyboardMarkup(
+    keyboard=[
+        [
+            KeyboardButton(text="Запрос авторизации"),
+        ]
+    ]
+)
+
 main_menu = ReplyKeyboardMarkup(
     keyboard=[
         [
