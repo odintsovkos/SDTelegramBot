@@ -5,7 +5,8 @@ auth_menu = ReplyKeyboardMarkup(
         [
             KeyboardButton(text="Запрос авторизации"),
         ]
-    ]
+    ],
+    resize_keyboard=True
 )
 
 main_menu = ReplyKeyboardMarkup(
