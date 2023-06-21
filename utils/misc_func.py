@@ -1,7 +1,9 @@
 import requests
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
+from loader import dp
 from utils.db_services import db_service
+from utils.notify_admins import admin_notify
 from utils.sd_api import api_service
 from utils.sd_api.api_service import get_request_sd_api
 
@@ -20,11 +22,8 @@ async def set_params(tg_id: int, last_prompt):
         "restore_faces": 'true' if db_result[8] else 'false',
         "batch_size": db_result[9]
     }
-    try:
-        response = api_service.post_request_sd_api("txt2img", params)
-        return response
-    except requests.exceptions.ConnectionError:
-        print("Ошибка изменения настроек, проверь SD")
+    response = api_service.post_request_sd_api("txt2img", params)
+    return response
 
 
 async def change_sd_model(tg_id: int):
@@ -34,21 +33,18 @@ async def change_sd_model(tg_id: int):
         params = {
             "sd_model_checkpoint": db_model
         }
-        try:
-            api_service.post_request_sd_api("options", params)
-            return db_model
-        except requests.exceptions.ConnectionError:
-            print("Ошибка загрузки модели, проверь SD")
+        api_service.post_request_sd_api("options", params)
+        return db_model
     else:
         return db_model
 
 
 def is_sd_launched():
-    try:
-        response = get_request_sd_api("options")
-        return True
-    except requests.exceptions.ConnectionError:
+    response = get_request_sd_api("options")
+    if response is None:
         return False
+    else:
+        return True
 
 
 async def change_style_db(tg_id: int, entered_style):

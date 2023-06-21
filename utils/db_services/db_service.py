@@ -27,6 +27,19 @@ async def db_get_sd_settings(tg_id: int):
             return await cursor.fetchone()
 
 
+async def db_get_all_tg_id():
+    async with aiosqlite.connect('users_sd_settings.db') as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(f"SELECT tg_id FROM users;") as cursor:
+            return await cursor.fetchall()
+
+
+async def db_delete_user(tg_id):
+    async with aiosqlite.connect('users_sd_settings.db') as db:
+        async with db.execute(f"DELETE FROM users WHERE tg_id={tg_id};"):
+            await db.commit()
+
+
 async def db_get_sd_setting(tg_id: int, param: str):
     async with aiosqlite.connect('users_sd_settings.db') as db:
         async with db.execute(f"SELECT {param} FROM users WHERE tg_id={tg_id};") as cursor:

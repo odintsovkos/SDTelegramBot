@@ -1,5 +1,6 @@
 import base64
 import io
+import logging
 
 from aiogram import types
 from aiogram.dispatcher.filters import Text
@@ -10,6 +11,7 @@ from states.all_states import SDStates
 from keyboards.default import keyboards
 from utils.db_services import db_service
 from utils.misc_func import set_params, change_sd_model, create_style_keyboard, change_style_db, create_keyboard
+from utils.notify_admins import admin_notify
 from utils.sd_api import api_service
 
 last_prompt = ""
@@ -94,12 +96,16 @@ async def send_photo(message, prompt):
                     media.attach_photo(image)
                 await message.answer_media_group(media=media)
                 await message.answer(caption, reply_markup=keyboards.main_menu)
-            except Exception:
-                await message.answer("Ошибка генерации, проверь SD!")
+            except Exception as err:
+                await message.answer("Ошибка генерации фото, информация об ошибке уже передана администраторам",
+                                     reply_markup=keyboards.main_menu)
+                await admin_notify(dp, msg="[ERROR] Ошибка генерации фото\n" + str(err))
         else:
             for i in response['images']:
                 image = types.InputFile(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
                 await message.answer_photo(photo=image)
                 await message.answer(caption, reply_markup=keyboards.main_menu)
     else:
-        await message.answer("Ошибка генерации, проверь SD!")
+        await message.answer("Ошибка генерации фото, информация об ошибке уже передана администраторам",
+                             reply_markup=keyboards.main_menu)
+        await admin_notify(dp, msg="[ERROR] Ошибка генерации фото\n Ошибка в функции send_photo " + str(response))

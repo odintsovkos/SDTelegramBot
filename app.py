@@ -4,7 +4,7 @@ from loader import dp
 import middlewares, handlers
 from utils.db_services import db_service
 from utils.misc_func import is_sd_launched
-from utils.notify_admins import on_startup_notify
+from utils.notify_admins import admin_notify
 from utils.set_bot_commands import set_default_commands
 
 
@@ -13,7 +13,7 @@ async def on_startup(dispatcher):
     await set_default_commands(dispatcher)
 
     # Уведомляет про запуск
-    await on_startup_notify(dispatcher)
+    await admin_notify(dispatcher, msg="Бот запущен")
 
 
 if __name__ == '__main__':
