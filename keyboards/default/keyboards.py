@@ -46,7 +46,7 @@ settings = ReplyKeyboardMarkup(
             KeyboardButton(text="Сброс настроек"),
         ],
         [
-            KeyboardButton(text="Назад"),
+            KeyboardButton(text="~Назад~"),
         ],
     ],
     resize_keyboard=True
@@ -55,7 +55,7 @@ settings = ReplyKeyboardMarkup(
 cancel = ReplyKeyboardMarkup(
     keyboard=[
         [
-            KeyboardButton(text="Отмена"),
+            KeyboardButton(text="~Назад~"),
         ],
     ],
     resize_keyboard=True

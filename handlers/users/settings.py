@@ -11,10 +11,19 @@ from utils.misc_func import create_samplers_keyboard
 from utils.sd_api import api_service
 
 
-@dp.message_handler(Text(equals="Назад"), state=SDStates.settings)
-async def cancel_button_handler(message: Message):
-    await message.answer("Действие отменено", reply_markup=keyboards.main_menu)
-    await SDStates.enter_prompt.set()
+@dp.message_handler(Text(equals="~Назад~"), state=[SDStates.settings, SDStates.settings_set_n_prompt,
+                                                   SDStates.settings_set_sampler, SDStates.settings_set_steps,
+                                                   SDStates.settings_set_wh, SDStates.settings_set_cfg_scale,
+                                                   SDStates.settings_set_restore_face,
+                                                   SDStates.settings_set_batch_count])
+async def cancel_button_handler(message: Message, state: FSMContext):
+
+    if await state.get_state() == SDStates.settings.state:
+        await message.answer("Действие отменено", reply_markup=keyboards.main_menu)
+        await SDStates.enter_prompt.set()
+    else:
+        await message.answer("Действие отменено", reply_markup=keyboards.settings)
+        await SDStates.settings.set()
 
 
 @dp.message_handler(commands=["settings"], state=SDStates.enter_prompt)
