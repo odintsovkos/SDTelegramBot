@@ -14,6 +14,7 @@ Stable Diffusion Local Telegram Bot
 - Настройки которые можно изменить: Negative prompt, Model, Styles, CFG Scale, Batch Size, Sampler, Restoreface
 - Вывод текущих настроек
 - Сброс настроек на стандартные заданные в файле sd_default_settings в папке data
+- Включение и отключение сохранения фото на ПК, в файле sd_default_settings в папке data, изменить значение переменной save_files на True чтобы включить и False выключить
 - Генерация изображений по промпту
 
 Установка:
