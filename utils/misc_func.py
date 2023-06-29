@@ -1,6 +1,7 @@
 import requests
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
+from data.sd_default_params import save_files
 from loader import dp
 from utils.db_services import db_service
 from utils.notify_admins import admin_notify
@@ -20,8 +21,11 @@ async def set_params(tg_id: int, last_prompt):
         "height": int(db_result[7].split('x')[1]),
         "sampler_name": db_result[5],
         "restore_faces": 'true' if db_result[9] else 'false',
-        "batch_size": db_result[10]
+        "batch_size": db_result[10],
+        "save_images": 'true' if save_files else 'false'
     }
+    if save_files:
+        api_service.post_request_sd_api("options", {"outdir_txt2img_samples": "outputs/txt2img-images"})
     response = api_service.post_request_sd_api("txt2img", params)
     return response
 

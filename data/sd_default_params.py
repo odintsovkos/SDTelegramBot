@@ -1,3 +1,6 @@
+save_files = False
+
+
 def get_default_params(tg_id):
     params = {"user_id": tg_id,
               "model_name": 'REAL--\deliberate_v2.safetensors [9aba26abdf]',
