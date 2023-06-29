@@ -9,7 +9,8 @@ from keyboards.default import keyboards
 from loader import dp
 from states.all_states import SDStates
 from utils.db_services import db_service
-from utils.misc_func import set_params, change_sd_model, create_style_keyboard, change_style_db, create_keyboard
+from utils.misc_func import set_params, change_sd_model, create_style_keyboard, change_style_db, create_keyboard, \
+    change_lora_db, create_lora_keyboard, reformat_lora
 from utils.notify_admins import admin_notify
 from utils.sd_api import api_service
 
@@ -42,6 +43,35 @@ async def change_model_handler(message: Message):
         await change_sd_model(message.from_user.id)
         await message.answer("Модель загружена", reply_markup=keyboards.main_menu)
         await SDStates.enter_prompt.set()
+
+
+@dp.message_handler(Text(equals="Lora"), state=SDStates.enter_prompt)
+async def lora_button_handler(message: Message):
+    lora_keyboard = await create_lora_keyboard(message.from_user.id)
+    await message.answer(f"Выбери Lora:", reply_markup=lora_keyboard)
+    await SDStates.settings_set_lora.set()
+
+
+@dp.message_handler(state=SDStates.settings_set_lora, content_types=types.ContentTypes.TEXT)
+async def change_lora_handler(message: Message):
+    if message.text == "~Назад~":
+        await message.answer("Действие отменено", reply_markup=keyboards.main_menu)
+        await SDStates.enter_prompt.set()
+    elif message.text == "~Подтвердить~":
+        await message.answer("Lora установлены", reply_markup=keyboards.main_menu)
+        await SDStates.enter_prompt.set()
+    elif message.text == "~Отключить все Lora~":
+        await message.answer("Все Lora отключены", reply_markup=keyboards.main_menu)
+        await db_service.db_set_sd_settings(message.from_user.id, "sd_lora", "")
+        await SDStates.enter_prompt.set()
+    else:
+        text_lora = message.text
+        if message.text[0] == '>':
+            text_lora = message.text[3:]
+        is_changed = await change_lora_db(message.from_user.id, text_lora)
+        lora_keyboard = await create_lora_keyboard(message.from_user.id)
+        await message.answer(f"Lora {text_lora} {'установлена' if is_changed else 'отключена'}",
+                             reply_markup=lora_keyboard)
 
 
 @dp.message_handler(Text(equals="Стиль"), state=SDStates.enter_prompt)
@@ -82,9 +112,13 @@ async def entered_prompt_handler(message: types.Message):
 
 async def send_photo(message, prompt):
     sd_model = await change_sd_model(message.from_user.id)
-    response = await set_params(message.from_user.id, prompt)
+    lora = await db_service.db_get_sd_setting(message.from_user.id, 'sd_lora')
+    response = await set_params(message.from_user.id, await reformat_lora(lora) + ", " + prompt)
     style = await db_service.db_get_sd_setting(message.from_user.id, 'sd_style')
-    caption = f"Prompt:\n{prompt}\nModel:\n{sd_model}\nStyle: {'Не задан' if style == '' else style.replace('&', ', ')}"
+    caption = f"Prompt:\n{prompt}\n" \
+              f"Model:\n{sd_model}\n" \
+              f"Style: {'Не задан' if style == '' else style.replace('&', ', ')}\n"\
+              f"Lora: {'Не задан' if lora == '' else lora.replace('&', ', ')}"
 
     if response is not None:
         media = types.MediaGroup()

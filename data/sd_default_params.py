@@ -2,6 +2,7 @@ def get_default_params(tg_id):
     params = {"user_id": tg_id,
               "model_name": 'REAL--\deliberate_v2.safetensors [9aba26abdf]',
               "styles_list": '',
+              "lora_list": '',
               "negative_prompt": '(deformed, distorted, disfigured:1.3),poorly drawn,bad anatomy,wrong anatomy,'
                                  'extra limb,missing limb,'
                                  'floating limbs,(mutated hands and fingers:1.4),disconnected limbs,mutation,mutated,'

@@ -12,15 +12,15 @@ async def set_params(tg_id: int, last_prompt):
     db_result = await db_service.db_get_sd_settings(tg_id)
     params = {
         "prompt": last_prompt,
-        "negative_prompt": db_result[3],
+        "negative_prompt": db_result[4],
         "styles": db_result[2].split('&'),
-        "cfg_scale": db_result[7],
-        "steps": db_result[5],
-        "width": int(db_result[6].split('x')[0]),
-        "height": int(db_result[6].split('x')[1]),
-        "sampler_name": db_result[4],
-        "restore_faces": 'true' if db_result[8] else 'false',
-        "batch_size": db_result[9]
+        "cfg_scale": db_result[8],
+        "steps": db_result[6],
+        "width": int(db_result[7].split('x')[0]),
+        "height": int(db_result[7].split('x')[1]),
+        "sampler_name": db_result[5],
+        "restore_faces": 'true' if db_result[9] else 'false',
+        "batch_size": db_result[10]
     }
     response = api_service.post_request_sd_api("txt2img", params)
     return response
@@ -64,6 +64,23 @@ async def change_style_db(tg_id: int, entered_style):
             return False
 
 
+async def change_lora_db(tg_id: int, entered_lora):
+    db_lora_list = await db_service.db_get_sd_setting(tg_id, 'sd_lora')
+    if db_lora_list == "":
+        await db_service.db_set_sd_settings(tg_id, 'sd_lora', entered_lora)
+        return True
+    else:
+        result = db_lora_list.split('&')
+        if entered_lora not in result:
+            result = db_lora_list + '&' + entered_lora
+            await db_service.db_set_sd_settings(tg_id, 'sd_lora', result)
+            return True
+        else:
+            result.remove(entered_lora)
+            await db_service.db_set_sd_settings(tg_id, 'sd_lora', '&'.join(result))
+            return False
+
+
 async def user_samplers(api_samplers, hide_user_samplers):
     return [x for x in api_samplers if x['name'] not in hide_user_samplers]
 
@@ -102,3 +119,27 @@ async def create_style_keyboard(tg_id: int):
         else:
             styles_keyboard.add(KeyboardButton(text=i['name']))
     return styles_keyboard
+
+
+async def create_lora_keyboard(tg_id: int):
+    db_lora_list = await db_service.db_get_sd_setting(tg_id, 'sd_lora')
+    sd_lora = api_service.get_request_sd_api('loras').json()
+    lora_keyboard = ReplyKeyboardMarkup()
+    lora_keyboard.add(KeyboardButton(text="~Назад~"))
+    lora_keyboard.add(KeyboardButton(text="~Подтвердить~"))
+    lora_keyboard.add(KeyboardButton(text="~Отключить все Lora~"))
+    for i in sd_lora:
+        if i['alias'] in db_lora_list.split('&'):
+            lora_keyboard.add(KeyboardButton(text='>> ' + i['alias']))
+        else:
+            lora_keyboard.add(KeyboardButton(text=i['alias']))
+    return lora_keyboard
+
+
+async def reformat_lora(lora):
+    lora_list = lora.split('&')
+    if lora == "":
+        return lora
+    else:
+        result = (f'<lora:{x}:0.7>' for x in lora_list)
+        return ', '.join(result)

@@ -9,6 +9,7 @@ async def db_create_table():
            tg_id INT PRIMARY KEY,
            sd_model TEXT,
            sd_style TEXT,
+           sd_lora TEXT,
            sd_n_prompt TEXT,
            sd_sampler TEXT,
            sd_steps INT,
@@ -56,13 +57,13 @@ async def db_set_sd_settings(tg_id, setting, value):
 async def db_create_new_user_settings(tg_id: int):
     params = list(get_default_params(tg_id).values())
     async with aiosqlite.connect('users_sd_settings.db') as db:
-        await db.execute(f"""INSERT INTO users VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);""", params)
+        await db.execute(f"""INSERT INTO users VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);""", params)
         await db.commit()
 
 
 async def db_update_default_settings(tg_id: int):
     params = list(get_default_params(tg_id).values())
-    settings = ['tg_id', 'sd_model', 'sd_style', 'sd_n_prompt', 'sd_sampler', 'sd_steps', 'sd_width_height',
+    settings = ['tg_id', 'sd_model', 'sd_style', 'sd_lora', 'sd_n_prompt', 'sd_sampler', 'sd_steps', 'sd_width_height',
                 'sd_cfg_scale', 'sd_restore_face', 'sd_batch_count']
 
     for i in range(len(settings) - 1):

@@ -17,6 +17,7 @@ main_menu = ReplyKeyboardMarkup(
         [
             KeyboardButton(text="Модель"),
             KeyboardButton(text="Стиль"),
+            KeyboardButton(text="Lora"),
         ],
     ],
     resize_keyboard=True

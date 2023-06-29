@@ -7,6 +7,7 @@ class SDStates(StatesGroup):
     settings = State()
     settings_set_model = State()
     settings_set_style = State()
+    settings_set_lora = State()
     settings_set_n_prompt = State()
     settings_set_sampler = State()
     settings_set_steps = State()

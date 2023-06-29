@@ -59,17 +59,28 @@ async def settings_buttons_handler(message: types.Message):
         db_result = await db_service.db_get_sd_settings(message.from_user.id)
         await message.answer(f"Model:\n"
                              f"{db_result[1]}\n"
+                             f"------------------------------------\n"
                              f"Style:\n"
-                             f"{db_result[2]}\n"
+                             f"{db_result[2].replace('&', ', ')}\n"
+                             f"------------------------------------\n"
+                             f"Lora:\n"
+                             f"{db_result[3].replace('&', ', ')}\n"
+                             f"------------------------------------\n"
                              f"Negative Prompt:\n"
-                             f"{db_result[3]}\n"
-                             f"Sampler:\n"
                              f"{db_result[4]}\n"
-                             f"Steps: {db_result[5]}\n"
-                             f"Width x Height: {db_result[6]}\n"
-                             f"CFG Scale: {db_result[7]}\n"
-                             f"Restore face: {'On' if db_result[8] == 1 else 'Off'}\n"
-                             f"Batch count: {db_result[9]}", reply_markup=keyboards.settings)
+                             f"------------------------------------\n"
+                             f"Sampler:\n"
+                             f"{db_result[5]}\n"
+                             f"------------------------------------\n"
+                             f"Steps: {db_result[6]}\n"
+                             f"------------------------------------\n"
+                             f"Width x Height: {db_result[7]}\n"
+                             f"------------------------------------\n"
+                             f"CFG Scale: {db_result[8]}\n"
+                             f"------------------------------------\n"
+                             f"Restore face: {'On' if db_result[9] == 1 else 'Off'}\n"
+                             f"------------------------------------\n"
+                             f"Batch count: {db_result[10]}", reply_markup=keyboards.settings)
     elif message.text == "Сброс настроек":
         await db_service.db_update_default_settings(message.from_user.id)
         await message.answer('Настройки сброшены', reply_markup=keyboards.settings)
