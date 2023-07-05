@@ -1,15 +1,17 @@
-import requests
+import os
+import subprocess
+
+import psutil as psutil
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
+from data.config import sd_path
 from data.sd_default_params import save_files
-from loader import dp
 from utils.db_services import db_service
-from utils.notify_admins import admin_notify
 from utils.sd_api import api_service
 from utils.sd_api.api_service import get_request_sd_api
 
 
-async def set_params(tg_id: int, last_prompt):
+async def generate_image(tg_id: int, last_prompt):
     db_result = await db_service.db_get_sd_settings(tg_id)
     params = {
         "prompt": last_prompt,
@@ -147,3 +149,36 @@ async def reformat_lora(lora):
     else:
         result = (f'<lora:{x}:0.7>' for x in lora_list)
         return ', '.join(result)
+
+
+def kill_sd_process():
+    for proc in psutil.process_iter():
+        if proc.name() == "python.exe" and proc.cmdline()[1] == "launch.py" and sd_path in proc.exe():
+            pid = proc.ppid()
+            os.system(f"taskkill /Pid {pid}")
+
+
+def launch_sd_process():
+    os.system(f"cd {sd_path} && start webui-user.bat")
+
+
+def check_sd_path():
+    list_files = ""
+    if sd_path != "":
+        try:
+            list_files = os.listdir(sd_path)
+            if "webui-user.bat" in list_files:
+                return True
+            else:
+                return False
+        except FileNotFoundError:
+            print("Путь к папке SD не верный, проверь путь в config.py")
+            return False
+    else:
+        print("Путь к папке SD не указан в файле config.py")
+        return False
+
+
+def restart_sd():
+    kill_sd_process()
+    launch_sd_process()

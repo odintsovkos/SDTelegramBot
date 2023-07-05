@@ -9,7 +9,7 @@ from keyboards.default import keyboards
 from loader import dp
 from states.all_states import SDStates
 from utils.db_services import db_service
-from utils.misc_func import set_params, change_sd_model, create_style_keyboard, change_style_db, create_keyboard, \
+from utils.misc_func import generate_image, change_sd_model, create_style_keyboard, change_style_db, create_keyboard, \
     change_lora_db, create_lora_keyboard, reformat_lora
 from utils.notify_admins import admin_notify
 from utils.sd_api import api_service
@@ -113,7 +113,9 @@ async def entered_prompt_handler(message: types.Message):
 async def send_photo(message, prompt):
     sd_model = await change_sd_model(message.from_user.id)
     lora = await db_service.db_get_sd_setting(message.from_user.id, 'sd_lora')
-    response = await set_params(message.from_user.id, await reformat_lora(lora) + ", " + prompt)
+    await message.answer("Генерация начата...")
+    response = await generate_image(message.from_user.id, await reformat_lora(lora) + ", " + prompt)
+
     style = await db_service.db_get_sd_setting(message.from_user.id, 'sd_style')
     caption = f"Prompt:\n{prompt}\n" \
               f"Model:\n{sd_model}\n" \
@@ -142,3 +144,4 @@ async def send_photo(message, prompt):
         await message.answer("Ошибка генерации фото, информация об ошибке уже передана администраторам",
                              reply_markup=keyboards.main_menu)
         await admin_notify(dp, msg="[ERROR] Ошибка генерации фото\n Ошибка в функции send_photo " + str(response))
+    response = None

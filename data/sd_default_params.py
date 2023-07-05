@@ -1,6 +1,8 @@
+# True сохраняет сгенерированные файлы в папку "outputs/txt2img-images"
 save_files = False
 
 
+# Параметры по умолчанию
 def get_default_params(tg_id):
     params = {"user_id": tg_id,
               "model_name": 'REAL--\deliberate_v2.safetensors [9aba26abdf]',

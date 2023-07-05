@@ -15,4 +15,5 @@ class SDStates(StatesGroup):
     settings_set_cfg_scale = State()
     settings_set_restore_face = State()
     settings_set_batch_count = State()
+    restart_sd = State()
 

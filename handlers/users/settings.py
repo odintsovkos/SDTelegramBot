@@ -1,13 +1,16 @@
+import time
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
-from aiogram.types import Message
+from aiogram.types import Message, KeyboardButton
 
+from data.config import ADMINS
+from keyboards.default import keyboards
 from loader import dp
 from states.all_states import SDStates
-from keyboards.default import keyboards
 from utils.db_services import db_service
-from utils.misc_func import create_samplers_keyboard
+from utils.misc_func import create_samplers_keyboard, is_sd_launched, restart_sd, check_sd_path
 from utils.sd_api import api_service
 
 
@@ -28,12 +31,14 @@ async def cancel_button_handler(message: Message, state: FSMContext):
 
 @dp.message_handler(commands=["settings"], state=SDStates.enter_prompt)
 async def settings_command_handler(message: Message):
+    if str(message.from_user.id) in ADMINS and keyboards.settings.keyboard[-1][0].text != "Перезапуск SD":
+        keyboards.settings.add(KeyboardButton(text="Перезапуск SD"))
     await message.answer("Настройки генерации", reply_markup=keyboards.settings)
     await SDStates.settings.set()
 
 
 @dp.message_handler(state=SDStates.settings, content_types=types.ContentTypes.TEXT)
-async def settings_buttons_handler(message: types.Message):
+async def settings_buttons_handler(message: types.Message, state: FSMContext):
     if message.text == "Negative Prompt":
         await message.answer(f"Напиши Negative prompt", reply_markup=keyboards.cancel)
         await SDStates.settings_set_n_prompt.set()
@@ -84,6 +89,19 @@ async def settings_buttons_handler(message: types.Message):
     elif message.text == "Сброс настроек":
         await db_service.db_update_default_settings(message.from_user.id)
         await message.answer('Настройки сброшены', reply_markup=keyboards.settings)
+    elif message.text == "Перезапуск SD":
+        if check_sd_path():
+            await message.answer("Перезапуск SD начат...")
+            restart_sd()
+            while True:
+                if is_sd_launched():
+                    await message.answer("Перезапуск SD завершен", reply_markup=keyboards.main_menu)
+                    await SDStates.enter_prompt.set()
+                    break
+                else:
+                    time.sleep(2)
+        else:
+            await message.answer("Перезапуск SD невозможен, ошибка в пути к папке SD", reply_markup=keyboards.main_menu)
 
 
 @dp.message_handler(state=SDStates.settings_set_n_prompt, content_types=types.ContentTypes.TEXT)
