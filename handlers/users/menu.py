@@ -1,12 +1,16 @@
+import asyncio
 import base64
 import io
+import threading
+import time
 
+import aiogram
 from aiogram import types
 from aiogram.dispatcher.filters import Text
 from aiogram.types import Message
 
 from keyboards.default import keyboards
-from loader import dp
+from loader import dp, bot
 from states.all_states import SDStates
 from utils.db_services import db_service
 from utils.misc_func import generate_image, change_sd_model, create_style_keyboard, change_style_db, create_keyboard, \
@@ -110,23 +114,80 @@ async def entered_prompt_handler(message: types.Message):
     await send_photo(message, last_prompt)
 
 
+response_list = []
+
+
+def generate_image_callback(user_id, prompt, response):
+    loop = asyncio.run(generate_image(user_id, prompt))
+    response.append(loop)
+    return loop
+
+
+async def progress_bar(chat_id, thread):
+    list_items = ["⬜️", "⬜️", "⬜️", "⬜️", "⬜️", "⬜️", "⬜️", "⬜️", "⬜️", "⬜️"]
+    green_item = "🟩"
+    num = 0
+    lust_num = 0
+    lust_percent_num = 0
+
+    upload_message = await bot.send_message(chat_id=chat_id, text=''.join(list_items) + " 0%")
+    await asyncio.sleep(0.5)
+
+    while True:
+        if 0 <= num <= 1:
+            list_items[0] = green_item
+        else:
+            for i in range(lust_num, num):
+                list_items[i] = green_item
+
+        if thread.is_alive():
+            progress = api_service.get_request_sd_api("progress")
+            progress_percent = round(progress.json()['progress'] * 100)
+            if progress_percent == 0 and num != 0:
+                progress_percent = 100
+            lust_num = num
+            num = int(progress_percent / 10)
+            prog = ''.join(list_items)
+            if progress_percent != lust_percent_num:
+                try:
+                    await upload_message.edit_text(prog + " " + str(progress_percent) + "%")
+                except aiogram.exceptions.MessageNotModified:
+                    continue
+                lust_percent_num = progress_percent
+            await asyncio.sleep(0.1)
+        else:
+            if num <= 10:
+                try:
+                    await upload_message.edit_text(''.join(list_items) + " 100%")
+                except aiogram.exceptions.MessageNotModified:
+                    break
+            break
+
+
 async def send_photo(message, prompt):
     sd_model = await change_sd_model(message.from_user.id)
     lora = await db_service.db_get_sd_setting(message.from_user.id, 'sd_lora')
     await message.answer("Генерация начата...")
-    response = await generate_image(message.from_user.id, await reformat_lora(lora) + ", " + prompt)
+
+    thread_generate_image = threading.Thread(target=generate_image_callback, args=(
+        message.from_user.id, await reformat_lora(lora) + ", " + prompt, response_list))
+    thread_generate_image.start()
+
+    await progress_bar(message.chat.id, thread_generate_image)
+
+    thread_generate_image.join()
 
     style = await db_service.db_get_sd_setting(message.from_user.id, 'sd_style')
     caption = f"Prompt:\n{prompt}\n" \
               f"Model:\n{sd_model}\n" \
-              f"Style: {'Не задан' if style == '' else style.replace('&', ', ')}\n"\
+              f"Style: {'Не задан' if style == '' else style.replace('&', ', ')}\n" \
               f"Lora: {'Не задан' if lora == '' else lora.replace('&', ', ')}"
 
-    if response is not None:
+    if response_list[0] is not None:
         media = types.MediaGroup()
-        if len(response['images']) > 1:
+        if len(response_list[0]['images']) > 1:
             try:
-                for i in response['images']:
+                for i in response_list[0]['images']:
                     image = types.InputFile(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
                     media.attach_photo(image)
                 await message.answer_media_group(media=media)
@@ -136,12 +197,13 @@ async def send_photo(message, prompt):
                                      reply_markup=keyboards.main_menu)
                 await admin_notify(dp, msg="[ERROR] Ошибка генерации фото\n" + str(err))
         else:
-            for i in response['images']:
+            for i in response_list[0]['images']:
                 image = types.InputFile(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
                 await message.answer_photo(photo=image)
                 await message.answer(caption, reply_markup=keyboards.main_menu)
     else:
         await message.answer("Ошибка генерации фото, информация об ошибке уже передана администраторам",
                              reply_markup=keyboards.main_menu)
-        await admin_notify(dp, msg="[ERROR] Ошибка генерации фото\n Ошибка в функции send_photo " + str(response))
-    response = None
+        await admin_notify(dp,
+                           msg="[ERROR] Ошибка генерации фото\n Ошибка в функции send_photo " + str(response_list[0]))
+    response_list.clear()

@@ -1,7 +1,8 @@
+import logging
+
 from aiogram import Dispatcher
 
 from data.config import ADMINS
-from loader import logger
 
 
 async def admin_notify(dp: Dispatcher, msg: str):
@@ -10,4 +11,4 @@ async def admin_notify(dp: Dispatcher, msg: str):
             await dp.bot.send_message(admin, msg)
 
         except Exception as err:
-            logger.exception(err)
+            logging.exception(err)
