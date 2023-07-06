@@ -1,10 +1,12 @@
 import os
+import time
 
 import psutil as psutil
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 from data.config import sd_path
 from data.sd_default_params import save_files
+from loader import logger
 from utils.db_services import db_service
 from utils.sd_api import api_service
 from utils.sd_api.api_service import get_request_sd_api
@@ -45,7 +47,7 @@ async def change_sd_model(tg_id: int):
 
 
 def is_sd_launched():
-    response = get_request_sd_api("options")
+    response = get_request_sd_api("options", is_logging=False)
     if response is None:
         return False
     else:
@@ -152,9 +154,14 @@ async def reformat_lora(lora):
 
 def kill_sd_process():
     for proc in psutil.process_iter():
-        if proc.name() == "python.exe" and proc.cmdline()[1] == "launch.py" and sd_path in proc.exe():
+        if proc.name() == "python.exe" and proc.cmdline()[1] == "launch.py":
             pid = proc.ppid()
-            os.system(f"taskkill /Pid {pid}")
+            os.system(f"taskkill /Pid {pid} /f")
+            time.sleep(1)
+    for proc in psutil.process_iter():
+        if proc.name() == "cmd.exe" and "webui-user.bat" in proc.cmdline():
+            pid = proc.ppid()
+            os.system(f"taskkill /Pid {pid} /f")
 
 
 def launch_sd_process():
@@ -169,12 +176,13 @@ def check_sd_path():
             if "webui-user.bat" in list_files:
                 return True
             else:
+                logger.warning("Не найден файл webui-user.bat, проверь путь в config.")
                 return False
         except FileNotFoundError:
-            print("Путь к папке SD не верный, проверь путь в config.py")
+            logger.warning("Путь к папке SD не верный, проверь путь в config.py")
             return False
     else:
-        print("Путь к папке SD не указан в файле config.py")
+        logger.warning("Путь к папке SD не указан в файле config.py")
         return False
 
 

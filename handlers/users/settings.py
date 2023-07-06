@@ -91,11 +91,13 @@ async def settings_buttons_handler(message: types.Message, state: FSMContext):
         await message.answer('Настройки сброшены', reply_markup=keyboards.settings)
     elif message.text == "Перезапуск SD":
         if check_sd_path():
+            start_time = time.time()
             await message.answer("Перезапуск SD начат...")
             restart_sd()
             while True:
                 if is_sd_launched():
-                    await message.answer("Перезапуск SD завершен", reply_markup=keyboards.main_menu)
+                    current_time = time.time()
+                    await message.answer(f"Перезапуск SD завершен\nВремя ожидания: {round(current_time - start_time)}s.", reply_markup=keyboards.main_menu)
                     await SDStates.enter_prompt.set()
                     break
                 else:
