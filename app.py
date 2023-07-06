@@ -1,5 +1,3 @@
-import asyncio
-
 from aiogram import executor
 import time
 

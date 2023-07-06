@@ -1,5 +1,4 @@
 import os
-import subprocess
 
 import psutil as psutil
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
