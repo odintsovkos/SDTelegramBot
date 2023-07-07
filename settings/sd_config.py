@@ -11,7 +11,7 @@ output_folder = 'outputs/txt2img-images'
 def get_default_params(tg_id):
     model = api_service.get_models_sd_api()
     params = {"user_id": tg_id,
-              "model_name": model[0]['title'],
+              "model_name": model[0]['model_name'],
               "styles_list": '',
               "lora_list": '',
               "negative_prompt": '(deformed, distorted, disfigured:1.3),poorly drawn,bad anatomy,wrong anatomy,'

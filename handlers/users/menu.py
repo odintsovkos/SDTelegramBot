@@ -31,7 +31,7 @@ async def re_generation_button_handler(message: Message):
 @dp.message_handler(Text(equals="Модель"), state=SDStates.enter_prompt)
 async def model_button_handler(message: Message):
     sd_model = api_service.get_request_sd_api("options").json()['sd_model_checkpoint']
-    models_keyboard = create_keyboard('sd-models', 'title')
+    models_keyboard = create_keyboard('sd-models', 'model_name')
     await message.answer(f"Текущая модель:\n{sd_model}", reply_markup=models_keyboard)
     await SDStates.settings_set_model.set()
 
