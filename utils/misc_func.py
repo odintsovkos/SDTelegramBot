@@ -1,12 +1,11 @@
+import asyncio
 import os
 import time
-
 import psutil as psutil
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-
-from data.config import sd_path
-from data.sd_default_params import save_files
-from loader import logger
+from settings.bot_config import sd_path
+from settings.sd_config import save_files, output_folder
+import logging
 from utils.db_services import db_service
 from utils.sd_api import api_service
 from utils.sd_api.api_service import get_request_sd_api
@@ -28,7 +27,7 @@ async def generate_image(tg_id: int, last_prompt):
         "save_images": 'true' if save_files else 'false'
     }
     if save_files:
-        api_service.post_request_sd_api("options", {"outdir_txt2img_samples": "outputs/txt2img-images"})
+        api_service.post_request_sd_api("options", {"outdir_txt2img_samples": f"{output_folder}"})
     response = api_service.post_request_sd_api("txt2img", params)
     return response
 
@@ -152,16 +151,17 @@ async def reformat_lora(lora):
         return ', '.join(result)
 
 
-def kill_sd_process():
+async def kill_sd_process():
     for proc in psutil.process_iter():
         if proc.name() == "python.exe" and proc.cmdline()[1] == "launch.py":
             pid = proc.ppid()
             os.system(f"taskkill /Pid {pid} /f")
-            time.sleep(1)
+            await asyncio.sleep(1)
     for proc in psutil.process_iter():
         if proc.name() == "cmd.exe" and "webui-user.bat" in proc.cmdline():
             pid = proc.ppid()
             os.system(f"taskkill /Pid {pid} /f")
+            await asyncio.sleep(1)
 
 
 def launch_sd_process():
@@ -176,16 +176,16 @@ def check_sd_path():
             if "webui-user.bat" in list_files:
                 return True
             else:
-                logger.warning("Не найден файл webui-user.bat, проверь путь в config.")
+                logging.warning("Не найден файл webui-user.bat, проверь путь в config.")
                 return False
         except FileNotFoundError:
-            logger.warning("Путь к папке SD не верный, проверь путь в config.py")
+            logging.warning("Путь к папке SD не верный, проверь путь в bot_config.py")
             return False
     else:
-        logger.warning("Путь к папке SD не указан в файле config.py")
+        logging.warning("Путь к папке SD не указан в файле bot_config.py")
         return False
 
 
-def restart_sd():
-    kill_sd_process()
+async def restart_sd():
+    await kill_sd_process()
     launch_sd_process()

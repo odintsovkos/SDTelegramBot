@@ -2,7 +2,6 @@ import asyncio
 import base64
 import io
 import threading
-import time
 
 import aiogram
 from aiogram import types
@@ -15,13 +14,13 @@ from states.all_states import SDStates
 from utils.db_services import db_service
 from utils.misc_func import generate_image, change_sd_model, create_style_keyboard, change_style_db, create_keyboard, \
     change_lora_db, create_lora_keyboard, reformat_lora
-from utils.notify_admins import admin_notify
+from utils.notifier import admin_notify
 from utils.sd_api import api_service
 
 last_prompt = ""
 
 
-@dp.message_handler(Text(equals="Ещё раз"), state="*")
+@dp.message_handler(Text(equals="Повторить"), state="*")
 async def re_generation_button_handler(message: Message):
     if last_prompt == "":
         await message.answer("Введи Prompt")
@@ -162,26 +161,28 @@ async def progress_bar(chat_id, thread):
                 except aiogram.exceptions.MessageNotModified:
                     break
             break
+    return upload_message.chat.id, upload_message.message_id
 
 
 async def send_photo(message, prompt):
     sd_model = await change_sd_model(message.from_user.id)
     lora = await db_service.db_get_sd_setting(message.from_user.id, 'sd_lora')
-    await message.answer("Генерация начата...")
 
     thread_generate_image = threading.Thread(target=generate_image_callback, args=(
         message.from_user.id, await reformat_lora(lora) + ", " + prompt, response_list))
     thread_generate_image.start()
 
-    await progress_bar(message.chat.id, thread_generate_image)
+    chat_id, message_id = await progress_bar(message.chat.id, thread_generate_image)
 
     thread_generate_image.join()
 
     style = await db_service.db_get_sd_setting(message.from_user.id, 'sd_style')
-    caption = f"Prompt:\n{prompt}\n" \
-              f"Model:\n{sd_model}\n" \
-              f"Style: {'Не задан' if style == '' else style.replace('&', ', ')}\n" \
-              f"Lora: {'Не задан' if lora == '' else lora.replace('&', ', ')}"
+    style_caption = f"\n<b>Style: </b><i>{style.replace('&', ', ')}</i>"
+    lora_caption = f"\n<b>Lora: </b><i>{lora.replace('&', ', ')}</i>"
+    caption = f"<b>Positive prompt:</b>\n<code>{prompt}</code>\n" \
+              f"<b>Model:</b>\n<i>{sd_model}</i>"
+    if style != '': caption += style_caption
+    if lora != '': caption += lora_caption
 
     if response_list[0] is not None:
         media = types.MediaGroup()
@@ -190,6 +191,7 @@ async def send_photo(message, prompt):
                 for i in response_list[0]['images']:
                     image = types.InputFile(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
                     media.attach_photo(image)
+                await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
                 await message.answer_media_group(media=media)
                 await message.answer(caption, reply_markup=keyboards.main_menu)
             except Exception as err:
@@ -199,6 +201,7 @@ async def send_photo(message, prompt):
         else:
             for i in response_list[0]['images']:
                 image = types.InputFile(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
+                await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
                 await message.answer_photo(photo=image)
                 await message.answer(caption, reply_markup=keyboards.main_menu)
     else:

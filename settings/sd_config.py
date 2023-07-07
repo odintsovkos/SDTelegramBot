@@ -1,11 +1,17 @@
 # True сохраняет сгенерированные файлы в папку "outputs/txt2img-images"
+from utils.sd_api import api_service
+
 save_files = False
+
+# Путь к папке для сохраненный изображений. Пример: "outputs/txt2img-images"
+output_folder = 'outputs/txt2img-images'
 
 
 # Параметры по умолчанию
 def get_default_params(tg_id):
+    model = api_service.get_models_sd_api()
     params = {"user_id": tg_id,
-              "model_name": 'REAL--\deliberate_v2.safetensors [9aba26abdf]',
+              "model_name": model[0]['title'],
               "styles_list": '',
               "lora_list": '',
               "negative_prompt": '(deformed, distorted, disfigured:1.3),poorly drawn,bad anatomy,wrong anatomy,'

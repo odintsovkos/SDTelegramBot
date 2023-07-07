@@ -1,20 +1,24 @@
+import logging
 from aiogram import executor
 import time
-
-from data.config import is_wait_sd_launch, time_the_next_check_s, launch_sd_at_bot_started
-from loader import dp, logger
+from settings.bot_config import is_wait_sd_launch, time_the_next_check_s, launch_sd_at_bot_started
+from loader import dp
 import middlewares, handlers
+from utils.db_services import db_service
+from utils.db_services.db_service import admins_and_users_initialization_in_db
 from utils.misc_func import is_sd_launched, check_sd_path, launch_sd_process
-from utils.notify_admins import admin_notify
+from utils.notifier import users_and_admins_notify
 from utils.set_bot_commands import set_default_commands
 
 
 async def on_startup(dispatcher):
+    await db_service.db_create_table()
+    await admins_and_users_initialization_in_db()
     # Устанавливаем дефолтные команды
     await set_default_commands(dispatcher)
 
     # Уведомляет про запуск
-    await admin_notify(dispatcher, msg="Бот запущен")
+    await users_and_admins_notify(dispatcher, msg="📢 Бот запущен, введите команду /start для начала генерации...")
 
 
 if __name__ == '__main__':
@@ -25,12 +29,12 @@ if __name__ == '__main__':
 
     elif launch_sd_at_bot_started and check_sd_path():
         launch_sd_process()
-        logger.info("Начинаю запуск SD...")
+        logging.info("Начинаю запуск SD...")
 
         while True:
             if is_sd_launched():
                 current_time = time.time()
-                logger.info(f"SD запущена - {int(current_time - start_time)}s.")
+                logging.info(f"SD запущена - {int(current_time - start_time)}s.")
 
                 executor.start_polling(dp, on_startup=on_startup)
                 break
@@ -42,14 +46,13 @@ if __name__ == '__main__':
         while True:
             if is_sd_launched():
                 current_time = time.time()
-                logger.info(f"SD запущена - {int(current_time - start_time)}s.")
+                logging.info(f"SD запущена - {int(current_time - start_time)}s.")
 
                 executor.start_polling(dp, on_startup=on_startup)
                 break
-            logger.warning(f"LAUNCH ATTEMPT {count}, STABLE DIFFUSION NOT LAUNCHED!")
+            logging.warning(f"LAUNCH ATTEMPT {count}, STABLE DIFFUSION NOT LAUNCHED!")
             count += 1
             time.sleep(time_the_next_check_s)
 
     elif not is_wait_sd_launch:
-        logger.warning("SD не запущена!")
-
+        logging.warning("SD не запущена!")

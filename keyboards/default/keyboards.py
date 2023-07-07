@@ -12,7 +12,7 @@ auth_menu = ReplyKeyboardMarkup(
 main_menu = ReplyKeyboardMarkup(
     keyboard=[
         [
-            KeyboardButton(text="Ещё раз"),
+            KeyboardButton(text="Повторить"),
         ],
         [
             KeyboardButton(text="Модель"),

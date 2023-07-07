@@ -1,3 +1,4 @@
+import asyncio
 import time
 
 from aiogram import types
@@ -5,7 +6,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.types import Message, KeyboardButton
 
-from data.config import ADMINS
+from settings.bot_config import ADMINS
 from keyboards.default import keyboards
 from loader import dp
 from states.all_states import SDStates
@@ -93,7 +94,7 @@ async def settings_buttons_handler(message: types.Message, state: FSMContext):
         if check_sd_path():
             start_time = time.time()
             await message.answer("Перезапуск SD начат...")
-            restart_sd()
+            await restart_sd()
             while True:
                 if is_sd_launched():
                     current_time = time.time()
@@ -101,7 +102,7 @@ async def settings_buttons_handler(message: types.Message, state: FSMContext):
                     await SDStates.enter_prompt.set()
                     break
                 else:
-                    time.sleep(2)
+                    await asyncio.sleep(1)
         else:
             await message.answer("Перезапуск SD невозможен, ошибка в пути к папке SD", reply_markup=keyboards.main_menu)
 

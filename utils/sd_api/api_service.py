@@ -1,6 +1,5 @@
 import requests
-
-from loader import logger
+import logging
 
 
 def post_request_sd_api(endpoint, params, is_logging=True):
@@ -11,7 +10,7 @@ def post_request_sd_api(endpoint, params, is_logging=True):
         return response.json()
     except requests.exceptions.ConnectionError:
         if is_logging:
-            logger.critical("Ошибка запроса к SD API. Проверь SD")
+            logging.critical("Ошибка запроса к SD API. Проверь SD")
         return None
 
 
@@ -23,8 +22,10 @@ def get_request_sd_api(endpoint, is_logging=True):
         return response
     except requests.exceptions.ConnectionError:
         if is_logging:
-            logger.critical("Ошибка запроса к SD API. Проверь SD")
+            logging.critical("Ошибка запроса к SD API. Проверь SD")
         return None
 
 
+def get_models_sd_api():
+    return get_request_sd_api("sd-models").json()
 
