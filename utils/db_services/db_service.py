@@ -31,6 +31,13 @@ async def db_get_sd_settings(tg_id: int):
             return await cursor.fetchone()
 
 
+async def db_get_sd_setting(tg_id: int, param: str):
+    async with aiosqlite.connect('users_sd_settings.db') as db:
+        async with db.execute(f"SELECT {param} FROM users WHERE tg_id={tg_id};") as cursor:
+            async for row in cursor:
+                return row[0]
+
+
 async def db_get_all_tg_id():
     async with aiosqlite.connect('users_sd_settings.db') as db:
         db.row_factory = aiosqlite.Row
@@ -42,13 +49,6 @@ async def db_delete_user(tg_id):
     async with aiosqlite.connect('users_sd_settings.db') as db:
         async with db.execute(f"DELETE FROM users WHERE tg_id={tg_id};"):
             await db.commit()
-
-
-async def db_get_sd_setting(tg_id: int, param: str):
-    async with aiosqlite.connect('users_sd_settings.db') as db:
-        async with db.execute(f"SELECT {param} FROM users WHERE tg_id={tg_id};") as cursor:
-            async for row in cursor:
-                return row[0]
 
 
 async def db_set_sd_settings(tg_id, setting, value):
@@ -69,7 +69,7 @@ async def db_update_default_settings(tg_id: int):
     settings = ['tg_id', 'sd_model', 'sd_style', 'sd_lora', 'sd_n_prompt', 'sd_sampler', 'sd_steps', 'sd_width_height',
                 'sd_cfg_scale', 'sd_restore_face', 'sd_batch_count']
 
-    for i in range(len(settings) - 1):
+    for i in range(len(settings)):
         await db_set_sd_settings(tg_id, settings[i], params[i])
 
 

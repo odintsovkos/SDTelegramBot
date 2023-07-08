@@ -1,6 +1,5 @@
 from aiogram.dispatcher.filters.builtin import CommandStart
 from aiogram.types import Message
-
 from settings.bot_config import ADMINS
 from keyboards.default import keyboards
 from loader import dp

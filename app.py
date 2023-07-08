@@ -6,7 +6,7 @@ from loader import dp
 import middlewares, handlers
 from utils.db_services import db_service
 from utils.db_services.db_service import admins_and_users_initialization_in_db
-from utils.misc_func import is_sd_launched, check_sd_path, launch_sd_process
+from utils.misc_func import is_sd_launched, check_sd_path, start_sd_process
 from utils.notifier import users_and_admins_notify
 from utils.set_bot_commands import set_default_commands
 
@@ -28,7 +28,7 @@ if __name__ == '__main__':
         executor.start_polling(dp, on_startup=on_startup)
 
     elif launch_sd_at_bot_started and check_sd_path():
-        launch_sd_process()
+        start_sd_process()
         logging.info("Начинаю запуск SD...")
 
         while True:

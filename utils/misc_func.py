@@ -1,12 +1,20 @@
 import asyncio
+import base64
+import io
+import logging
 import os
-import time
+import threading
+
 import psutil as psutil
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram import types
+
+from keyboards.default import keyboards
+from loader import dp
 from settings.bot_config import sd_path
 from settings.sd_config import save_files, output_folder
-import logging
 from utils.db_services import db_service
+from utils.notifier import admin_notify
+from utils.progress_bar import progress_bar
 from utils.sd_api import api_service
 from utils.sd_api.api_service import get_request_sd_api
 
@@ -91,57 +99,6 @@ async def user_samplers(api_samplers, hide_user_samplers):
     return [x for x in api_samplers if x['name'] not in hide_user_samplers]
 
 
-async def create_samplers_keyboard():
-    api_result = api_service.get_request_sd_api('samplers').json()
-    hide_sampler = api_service.get_request_sd_api('options').json()['hide_samplers']
-
-    inline_kb_full = ReplyKeyboardMarkup()
-    inline_kb_full.add(KeyboardButton(text="~Назад~"))
-    for i in await user_samplers(api_result, hide_sampler):
-        inline_kb_full.add(KeyboardButton(text=i['name']))
-    return inline_kb_full
-
-
-def create_keyboard(endpoint, txt):
-    result_models = api_service.get_request_sd_api(endpoint).json()
-    inline_kb_full = ReplyKeyboardMarkup()
-    inline_kb_full.add(KeyboardButton(text="~Назад~"))
-    for i in result_models:
-        inline_kb_full.add(KeyboardButton(text=i[txt]))
-    return inline_kb_full
-
-
-async def create_style_keyboard(tg_id: int):
-    db_styles_list = await db_service.db_get_sd_setting(tg_id, 'sd_style')
-    sd_styles = api_service.get_request_sd_api('prompt-styles').json()
-    styles_keyboard = ReplyKeyboardMarkup()
-    styles_keyboard.add(KeyboardButton(text="~Назад~"))
-    styles_keyboard.add(KeyboardButton(text="~Подтвердить~"))
-    styles_keyboard.add(KeyboardButton(text="~Отключить все стили~"))
-    for i in sd_styles:
-        if i['name'] in db_styles_list.split('&'):
-            styles_keyboard.add(KeyboardButton(text='>> ' + i['name']))
-
-        else:
-            styles_keyboard.add(KeyboardButton(text=i['name']))
-    return styles_keyboard
-
-
-async def create_lora_keyboard(tg_id: int):
-    db_lora_list = await db_service.db_get_sd_setting(tg_id, 'sd_lora')
-    sd_lora = api_service.get_request_sd_api('loras').json()
-    lora_keyboard = ReplyKeyboardMarkup()
-    lora_keyboard.add(KeyboardButton(text="~Назад~"))
-    lora_keyboard.add(KeyboardButton(text="~Подтвердить~"))
-    lora_keyboard.add(KeyboardButton(text="~Отключить все Lora~"))
-    for i in sd_lora:
-        if i['alias'] in db_lora_list.split('&'):
-            lora_keyboard.add(KeyboardButton(text='>> ' + i['alias']))
-        else:
-            lora_keyboard.add(KeyboardButton(text=i['alias']))
-    return lora_keyboard
-
-
 async def reformat_lora(lora):
     lora_list = lora.split('&')
     if lora == "":
@@ -164,7 +121,7 @@ async def kill_sd_process():
             await asyncio.sleep(1)
 
 
-def launch_sd_process():
+def start_sd_process():
     os.system(f"cd {sd_path} && start webui-user.bat")
 
 
@@ -188,4 +145,66 @@ def check_sd_path():
 
 async def restart_sd():
     await kill_sd_process()
-    launch_sd_process()
+    start_sd_process()
+
+
+def generate_image_callback(user_id, prompt, response):
+    loop = asyncio.run(generate_image(user_id, prompt))
+    response.append(loop)
+    return loop
+
+
+def change_model_callback(user_id, response):
+    loop = asyncio.run(change_sd_model(user_id))
+    response.append(loop)
+    return loop
+
+
+async def send_photo(message, prompt, response_list):
+    sd_model = await change_sd_model(message.from_user.id)
+    lora = await db_service.db_get_sd_setting(message.from_user.id, 'sd_lora')
+
+    thread_generate_image = threading.Thread(target=generate_image_callback, args=(
+        message.from_user.id, await reformat_lora(lora) + ", " + prompt, response_list))
+    thread_generate_image.start()
+
+    chat_id, message_id = await progress_bar(message.chat.id, thread_generate_image)
+
+    thread_generate_image.join()
+
+    style = await db_service.db_get_sd_setting(message.from_user.id, 'sd_style')
+    style_caption = f"\n<b>Styles: </b><i>{style.replace('&', ', ')}</i>"
+    lora_caption = f"\n<b>LoRa: </b><i>{lora.replace('&', ', ')}</i>"
+    caption = f"<b>Positive prompt:</b>\n<code>{prompt}</code>\n" \
+              f"<b>Model:</b>\n<i>{sd_model}</i>"
+    if style != '':
+        caption += style_caption
+    if lora != '':
+        caption += lora_caption
+
+    if response_list[0] is not None:
+        media = types.MediaGroup()
+        if len(response_list[0]['images']) > 1:
+            try:
+                for i in response_list[0]['images']:
+                    image = types.InputFile(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
+                    media.attach_photo(image)
+                await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
+                await message.answer_media_group(media=media)
+                await message.answer(caption, reply_markup=keyboards.main_menu)
+            except Exception as err:
+                await message.answer("Ошибка генерации фото, информация об ошибке уже передана администраторам",
+                                     reply_markup=keyboards.main_menu)
+                await admin_notify(dp, msg="[ERROR] Ошибка генерации фото\n" + str(err))
+        else:
+            for i in response_list[0]['images']:
+                image = types.InputFile(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
+                await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
+                await message.answer_photo(photo=image)
+                await message.answer(caption, reply_markup=keyboards.main_menu)
+    else:
+        await message.answer("Ошибка генерации фото, информация об ошибке уже передана администраторам",
+                             reply_markup=keyboards.main_menu)
+        await admin_notify(dp,
+                           msg="[ERROR] Ошибка генерации фото\n Ошибка в функции send_photo " + str(response_list[0]))
+    response_list.clear()
