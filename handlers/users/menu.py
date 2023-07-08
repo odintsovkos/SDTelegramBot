@@ -50,6 +50,7 @@ async def change_model_handler(message: Message):
     thread_change_model.join()
     await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
     await message.answer(text=f"✅ Модель загружена", reply_markup=keyboards.main_menu)
+    response_list.clear()
     await SDStates.enter_prompt.set()
 
 
