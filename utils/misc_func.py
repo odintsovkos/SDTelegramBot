@@ -4,6 +4,7 @@ import io
 import logging
 import os
 import threading
+import time
 
 import psutil as psutil
 from aiogram import types
@@ -13,7 +14,7 @@ from loader import dp
 from settings.bot_config import sd_path
 from settings.sd_config import save_files, output_folder
 from utils.db_services import db_service
-from utils.notifier import admin_notify
+from utils.notifier import admin_notify, users_and_admins_notify
 from utils.progress_bar import progress_bar
 from utils.sd_api import api_service
 from utils.sd_api.api_service import get_request_sd_api
@@ -111,12 +112,12 @@ async def reformat_lora(lora):
 async def kill_sd_process():
     for proc in psutil.process_iter():
         if proc.name() == "python.exe" and proc.cmdline()[1] == "launch.py":
-            pid = proc.ppid()
+            pid = proc.pid
             os.system(f"taskkill /Pid {pid} /f")
             await asyncio.sleep(1)
     for proc in psutil.process_iter():
         if proc.name() == "cmd.exe" and "webui-user.bat" in proc.cmdline():
-            pid = proc.ppid()
+            pid = proc.pid
             os.system(f"taskkill /Pid {pid} /f")
             await asyncio.sleep(1)
 
@@ -208,3 +209,16 @@ async def send_photo(message, prompt, response_list):
         await admin_notify(dp,
                            msg="[ERROR] Ошибка генерации фото\n Ошибка в функции send_photo " + str(response_list[0]))
     response_list.clear()
+
+
+async def restarting_sd(message):
+    await message.answer("⛔️ SD не отвечает...\n🔃 Перезапускаю SD!", reply_markup=keyboards.main_menu)
+    await restart_sd()
+    start_time = time.time()
+    while True:
+        if is_sd_launched():
+            current_time = time.time()
+            logging.info(f"SD запущена - {int(current_time - start_time)}s.")
+            await users_and_admins_notify(dp, f"✅ SD запущена - {int(current_time - start_time)}s.")
+            break
+        await asyncio.sleep(1)

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from aiogram import executor
 import time
@@ -13,6 +14,7 @@ from utils.set_bot_commands import set_default_commands
 
 async def on_startup(dispatcher):
     await db_service.db_create_table()
+    await asyncio.sleep(2)
     await admins_and_users_initialization_in_db()
     # Устанавливаем дефолтные команды
     await set_default_commands(dispatcher)

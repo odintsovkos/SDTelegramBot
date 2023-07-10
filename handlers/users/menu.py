@@ -1,3 +1,4 @@
+import asyncio
 import threading
 
 from aiogram import types
@@ -10,7 +11,8 @@ from keyboards.default.keyboards import create_model_keyboard, create_lora_keybo
 from loader import dp
 from states.all_states import SDStates
 from utils.db_services import db_service
-from utils.misc_func import change_style_db, change_lora_db, send_photo, change_model_callback
+from utils.misc_func import change_style_db, change_lora_db, send_photo, change_model_callback, restart_sd, \
+    restarting_sd, is_sd_launched
 from utils.waiting_bar import waiting_bar
 
 last_prompt = ""
@@ -29,7 +31,12 @@ async def re_generation_button_handler(message: Message):
     if last_prompt == "":
         await message.answer("✏️ Введи Prompt")
     else:
-        await send_photo(message, last_prompt, response_list)
+        if is_sd_launched():
+            await send_photo(message, last_prompt, response_list)
+        else:
+            await restarting_sd(message)
+            await asyncio.sleep(2)
+            await send_photo(message, last_prompt, response_list)
 
 
 @dp.message_handler(Text(equals=str_var.model), state=SDStates.enter_prompt)
@@ -110,4 +117,9 @@ async def change_style_handler(message: Message):
 async def entered_prompt_handler(message: types.Message):
     global last_prompt
     last_prompt = message['text']
-    await send_photo(message, last_prompt, response_list)
+    if is_sd_launched():
+        await send_photo(message, last_prompt, response_list)
+    else:
+        await restarting_sd(message)
+        await asyncio.sleep(2)
+        await send_photo(message, last_prompt, response_list)
