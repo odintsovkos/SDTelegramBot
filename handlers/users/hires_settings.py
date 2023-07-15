@@ -43,7 +43,7 @@ async def settings_buttons_handler(message: types.Message):
     if message.text == str_var.hr_on_off:
         await message.answer(f"Текущее состояние: "
                              f"Hires - {'Включен' if current_settings['sd_hr_on_off'] == 1 else 'Отключен'}\n"
-                             f"✏️ Введи 1 - Вкл. или 0 - Выкл.")
+                             f"✏️ Введи 1 - Вкл. или 0 - Выкл.", reply_markup=keyboards.cancel)
         await SDStates.hr_set_on_off.set()
 
     elif message.text == str_var.hr_upscaler:
