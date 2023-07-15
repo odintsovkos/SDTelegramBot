@@ -1,3 +1,17 @@
+"""
+Автор: Константин Одинцов
+e-mail: kos5172@yandex.ru
+Github: https://github.com/odintsovkos
+Этот файл — часть SDTelegramBot.
+
+SDTelegramBot — свободная программа: вы можете перераспространять ее и/или изменять ее на условиях Стандартной общественной лицензии GNU в том виде, в каком она была опубликована Фондом свободного программного обеспечения; либо версии 3 лицензии, либо (по вашему выбору) любой более поздней версии.
+
+SDTelegramBot распространяется в надежде, что она будет полезной, но БЕЗО ВСЯКИХ ГАРАНТИЙ; даже без неявной гарантии ТОВАРНОГО ВИДА или ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Подробнее см. в Стандартной общественной лицензии GNU.
+
+Вы должны были получить копию Стандартной общественной лицензии GNU вместе с этой программой. Если это не так, см. <https://www.gnu.org/licenses/>.
+"""
+
+
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 import settings.string_variables as str_var
 from utils.db_services import db_service
@@ -37,6 +51,7 @@ settings = ReplyKeyboardMarkup(
         [
 
             KeyboardButton(text=str_var.batch_count),
+            KeyboardButton(text=str_var.hr_settings),
         ],
         [
             KeyboardButton(text=str_var.reset_settings),
@@ -50,6 +65,24 @@ settings = ReplyKeyboardMarkup(
 
 cancel = ReplyKeyboardMarkup(
     keyboard=[
+        [
+            KeyboardButton(text=str_var.cancel),
+        ],
+    ],
+    resize_keyboard=True
+)
+
+hires_menu = ReplyKeyboardMarkup(
+    keyboard=[
+        [
+            KeyboardButton(text=str_var.hr_on_off),
+        ],
+        [
+            KeyboardButton(text=str_var.hr_upscaler),
+            KeyboardButton(text=str_var.hr_steps),
+            KeyboardButton(text=str_var.hr_denoising_strength),
+            KeyboardButton(text=str_var.hr_upscale_by),
+        ],
         [
             KeyboardButton(text=str_var.cancel),
         ],
@@ -108,3 +141,12 @@ async def create_lora_keyboard(tg_id: int):
         else:
             lora_keyboard.add(KeyboardButton(text=i['alias']))
     return lora_keyboard
+
+
+async def create_hr_upscalers_keyboard():
+    api_result = api_service.get_request_sd_api('upscalers').json()
+    default_kb_full = ReplyKeyboardMarkup()
+    default_kb_full.add(KeyboardButton(text=str_var.cancel))
+    for i in api_result:
+        default_kb_full.add(KeyboardButton(text=i['name']))
+    return default_kb_full

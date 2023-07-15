@@ -1,3 +1,17 @@
+"""
+Автор: Константин Одинцов
+e-mail: kos5172@yandex.ru
+Github: https://github.com/odintsovkos
+Этот файл — часть SDTelegramBot.
+
+SDTelegramBot — свободная программа: вы можете перераспространять ее и/или изменять ее на условиях Стандартной общественной лицензии GNU в том виде, в каком она была опубликована Фондом свободного программного обеспечения; либо версии 3 лицензии, либо (по вашему выбору) любой более поздней версии.
+
+SDTelegramBot распространяется в надежде, что она будет полезной, но БЕЗО ВСЯКИХ ГАРАНТИЙ; даже без неявной гарантии ТОВАРНОГО ВИДА или ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Подробнее см. в Стандартной общественной лицензии GNU.
+
+Вы должны были получить копию Стандартной общественной лицензии GNU вместе с этой программой. Если это не так, см. <https://www.gnu.org/licenses/>.
+"""
+
+
 import requests
 import logging
 
@@ -28,6 +42,10 @@ def get_request_sd_api(endpoint, is_logging=True):
 
 def get_models_sd_api():
     return get_request_sd_api("sd-models").json()
+
+
+def get_hr_upscaler_sd_api():
+    return get_request_sd_api("upscalers").json()
 
 
 def get_image_seed(image):

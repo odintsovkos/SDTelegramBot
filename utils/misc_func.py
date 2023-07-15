@@ -1,3 +1,17 @@
+"""
+Автор: Константин Одинцов
+e-mail: kos5172@yandex.ru
+Github: https://github.com/odintsovkos
+Этот файл — часть SDTelegramBot.
+
+SDTelegramBot — свободная программа: вы можете перераспространять ее и/или изменять ее на условиях Стандартной общественной лицензии GNU в том виде, в каком она была опубликована Фондом свободного программного обеспечения; либо версии 3 лицензии, либо (по вашему выбору) любой более поздней версии.
+
+SDTelegramBot распространяется в надежде, что она будет полезной, но БЕЗО ВСЯКИХ ГАРАНТИЙ; даже без неявной гарантии ТОВАРНОГО ВИДА или ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Подробнее см. в Стандартной общественной лицензии GNU.
+
+Вы должны были получить копию Стандартной общественной лицензии GNU вместе с этой программой. Если это не так, см. <https://www.gnu.org/licenses/>.
+"""
+
+
 import asyncio
 import base64
 import io
@@ -5,7 +19,6 @@ import logging
 import os
 import threading
 import time
-import ast
 import psutil as psutil
 from aiogram import types
 
@@ -206,7 +219,7 @@ async def send_photo(message, last_prompt, response_list):
             for i in response_list[0]['images']:
                 image = types.InputFile(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
                 image_seed = api_service.get_image_seed(i)
-                caption += f"\n<b>Seed:</b>\n<code>{image_seed}</code>"
+                caption += f"\n<b>Seed:</b> <code>{image_seed}</code>"
                 await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
                 await message.answer_photo(photo=image)
                 await message.answer(caption, reply_markup=keyboards.main_menu)

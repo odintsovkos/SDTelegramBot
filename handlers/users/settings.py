@@ -1,3 +1,17 @@
+"""
+Автор: Константин Одинцов
+e-mail: kos5172@yandex.ru
+Github: https://github.com/odintsovkos
+Этот файл — часть SDTelegramBot.
+
+SDTelegramBot — свободная программа: вы можете перераспространять ее и/или изменять ее на условиях Стандартной общественной лицензии GNU в том виде, в каком она была опубликована Фондом свободного программного обеспечения; либо версии 3 лицензии, либо (по вашему выбору) любой более поздней версии.
+
+SDTelegramBot распространяется в надежде, что она будет полезной, но БЕЗО ВСЯКИХ ГАРАНТИЙ; даже без неявной гарантии ТОВАРНОГО ВИДА или ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Подробнее см. в Стандартной общественной лицензии GNU.
+
+Вы должны были получить копию Стандартной общественной лицензии GNU вместе с этой программой. Если это не так, см. <https://www.gnu.org/licenses/>.
+"""
+
+
 import asyncio
 import time
 
@@ -48,53 +62,73 @@ async def settings_buttons_handler(message: types.Message):
                              f"✏️ Напиши Negative prompt",
                              reply_markup=keyboards.cancel)
         await SDStates.settings_set_n_prompt.set()
+
     elif message.text == str_var.sampler:
         await message.answer(f"<b>Текущий Sampler:</b>\n <i>{current_settings['sd_sampler']}</i>\n"
                              f"✏️ Выбери Sampler",
                              reply_markup=await create_samplers_keyboard())
         await SDStates.settings_set_sampler.set()
+
     elif message.text == str_var.steps:
         await message.answer(f"<b>Текущий Steps:</b>\n <i>{current_settings['sd_steps']}</i>\n"
                              f"✏️ Введи количество шагов генерации",
                              reply_markup=keyboards.cancel)
         await SDStates.settings_set_steps.set()
+
     elif message.text == str_var.width_height:
         await message.answer(f"<b>Текущие Width x Height:</b>\n <i>{current_settings['sd_width_height']}</i>\n"
                              f"✏️ Введи ширину и высоту, через 'x'.\n"
                              f"Например: <code>512x512</code>, <code>768x768</code>, <code>800x1000</code>",
                              reply_markup=keyboards.cancel)
         await SDStates.settings_set_wh.set()
+
     elif message.text == str_var.cfg_scale:
         await message.answer(f"<b>Текущий CFG Scale:</b>\n <i>{current_settings['sd_cfg_scale']}</i>\n"
                              f"✏️ Введи CFG Scale (дробное число, через точку)",
                              reply_markup=keyboards.cancel)
         await SDStates.settings_set_cfg_scale.set()
+
     elif message.text == str_var.restore_face:
         await message.answer(f"<b>Текущий Restore face:</b>\n <i>{current_settings['sd_restore_face']}</i>\n"
                              f"✏️ Включить Restore face? 1/0",
                              reply_markup=keyboards.cancel)
         await SDStates.settings_set_restore_face.set()
+
     elif message.text == str_var.batch_count:
         await message.answer(f"<b>Текущий Batch count:</b>\n <i>{current_settings['sd_batch_count']}</i>\n"
                              f"✏️ Введи Batch count (MAX 8)",
                              reply_markup=keyboards.cancel)
         await SDStates.settings_set_batch_count.set()
+
+    elif message.text == str_var.hr_settings:
+        await message.answer(f"Настройки Hires. fix",
+                             reply_markup=keyboards.hires_menu)
+        await SDStates.hr_settings.set()
+
     elif message.text == str_var.current_settings:
         db_result = await db_service.db_get_sd_settings(message.from_user.id)
-        current_settings = markdown.hbold("Model:\n") + markdown.hitalic(db_result[1]) + \
-            markdown.hbold("\nStyle:\n") + markdown.hitalic(db_result[2].replace('&', ', ')) + \
-            markdown.hbold("\nLoRa:\n") + markdown.hitalic(db_result[3].replace('&', ', ')) + \
+        current_settings = markdown.hbold("Model: ") + markdown.hitalic(db_result[1]) + \
+            markdown.hbold("\nStyle:\n") + markdown.hitalic(db_result[2].replace('&', ', ')) if db_result[2] != '' else "" + \
+            markdown.hbold("\nLoRa:\n") + markdown.hitalic(db_result[3].replace('&', ', ')) if db_result[3] != '' else "" + \
             markdown.hbold("\nNegative Prompt:\n") + markdown.hitalic(db_result[4]) + \
-            markdown.hbold("\nSampler:\n") + markdown.hitalic(db_result[5]) + \
-            markdown.hbold("\nSteps:\n") + markdown.hitalic(db_result[6]) + \
-            markdown.hbold("\nWidth x Height:\n") + markdown.hitalic(db_result[7]) + \
-            markdown.hbold("\nCFG Scale:\n") + markdown.hitalic(db_result[8]) + \
-            markdown.hbold("\nRestore face:\n") + markdown.hitalic('On' if db_result[9] == 1 else 'Off') + \
-            markdown.hbold("\nBatch count:\n") + markdown.hitalic(db_result[10])
-        await message.answer(current_settings, reply_markup=keyboards.settings)
+            markdown.hbold("\nSampler: ") + markdown.hitalic(db_result[5]) + \
+            markdown.hbold("\nSteps: ") + markdown.hitalic(db_result[6]) + \
+            markdown.hbold("\nWidth x Height: ") + markdown.hitalic(db_result[7]) + \
+            markdown.hbold("\nCFG Scale: ") + markdown.hitalic(db_result[8]) + \
+            markdown.hbold("\nRestore face: ") + markdown.hitalic('On' if db_result[9] == 1 else 'Off') + \
+            markdown.hbold("\nBatch count: ") + markdown.hitalic(db_result[10])
+        hires_settings = markdown.hbold("\nHires: ") + markdown.hitalic("Включен" if db_result[11] == 1 else "Отключен") + \
+            markdown.hbold("\nHires Upscaler: ") + markdown.hitalic(db_result[12]) + \
+            markdown.hbold("\nHires Steps: ") + markdown.hitalic(db_result[13]) + \
+            markdown.hbold("\nHires Denoising Strength: ") + markdown.hitalic(db_result[14]) + \
+            markdown.hbold("\nHires Upscale by: ") + markdown.hitalic(db_result[15])
+        await message.answer(current_settings + hires_settings if db_result[11] == 1 else current_settings,
+                             reply_markup=keyboards.settings)
+
     elif message.text == str_var.reset_settings:
         await db_service.db_update_default_settings(message.from_user.id)
         await message.answer('🛠 Настройки сброшены', reply_markup=keyboards.settings)
+
     elif message.text == str_var.restart_sd:
         if check_sd_path():
             start_time = time.time()
