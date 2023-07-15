@@ -101,12 +101,12 @@ async def hr_on_off_button_handler(message: Message):
 
 @dp.message_handler(state=SDStates.hr_set_denoising_strength, content_types=types.ContentTypes.TEXT)
 async def hr_on_off_button_handler(message: Message):
-    if message.text.isdigit():
-        await db_service.db_set_sd_settings(message.from_user.id, "sd_hr_denoising_strength", message.text)
+    try:
+        await db_service.db_set_sd_settings(message.from_user.id, "sd_hr_denoising_strength", float(message.text))
         await message.answer(f"Denoising strength установлен",
                              reply_markup=keyboards.hires_menu)
         await SDStates.hr_settings.set()
-    else:
+    except ValueError:
         await message.answer("Ошибка ввода", reply_markup=keyboards.cancel)
 
 

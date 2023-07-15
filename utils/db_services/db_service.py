@@ -37,7 +37,7 @@ async def db_create_table():
            sd_hr_on_off INT,
            sd_hr_upscaler TEXT,
            sd_hr_steps INT,
-           sd_hr_denoising_strength INT,
+           sd_hr_denoising_strength REAL,
            sd_hr_upscale_by INT);
         """)
         await db.commit()
