@@ -5,7 +5,7 @@ import logging
 import os
 import threading
 import time
-
+import ast
 import psutil as psutil
 from aiogram import types
 
@@ -20,7 +20,7 @@ from utils.sd_api import api_service
 from utils.sd_api.api_service import get_request_sd_api
 
 
-async def generate_image(tg_id: int, last_prompt):
+async def generate_image(tg_id: int, last_prompt, seed):
     db_result = await db_service.db_get_sd_settings(tg_id)
     params = {
         "prompt": last_prompt,
@@ -33,7 +33,8 @@ async def generate_image(tg_id: int, last_prompt):
         "sampler_name": db_result[5],
         "restore_faces": 'true' if db_result[9] else 'false',
         "batch_size": db_result[10],
-        "save_images": 'true' if save_files else 'false'
+        "save_images": 'true' if save_files else 'false',
+        "seed": seed
     }
     if save_files:
         api_service.post_request_sd_api("options", {"outdir_txt2img_samples": f"{output_folder}"})
@@ -149,8 +150,8 @@ async def restart_sd():
     start_sd_process()
 
 
-def generate_image_callback(user_id, prompt, response):
-    loop = asyncio.run(generate_image(user_id, prompt))
+def generate_image_callback(user_id, prompt, seed, response):
+    loop = asyncio.run(generate_image(tg_id=user_id, last_prompt=prompt, seed=seed))
     response.append(loop)
     return loop
 
@@ -161,12 +162,12 @@ def change_model_callback(user_id, response):
     return loop
 
 
-async def send_photo(message, prompt, response_list):
+async def send_photo(message, last_prompt, response_list):
     sd_model = await change_sd_model(message.from_user.id)
     lora = await db_service.db_get_sd_setting(message.from_user.id, 'sd_lora')
-
+    seed, prompt = await message_parse(last_prompt)
     thread_generate_image = threading.Thread(target=generate_image_callback, args=(
-        message.from_user.id, await reformat_lora(lora) + ", " + prompt, response_list))
+        message.from_user.id, await reformat_lora(lora) + ", " + prompt, seed, response_list))
     thread_generate_image.start()
 
     chat_id, message_id = await progress_bar(message.chat.id, thread_generate_image)
@@ -187,9 +188,13 @@ async def send_photo(message, prompt, response_list):
         media = types.MediaGroup()
         if len(response_list[0]['images']) > 1:
             try:
+                count = 1
                 for i in response_list[0]['images']:
                     image = types.InputFile(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
                     media.attach_photo(image)
+                    image_seed = api_service.get_image_seed(i)
+                    caption += f"\n<b>Seed {count}:</b> <code>{image_seed}</code>"
+                    count += 1
                 await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
                 await message.answer_media_group(media=media)
                 await message.answer(caption, reply_markup=keyboards.main_menu)
@@ -200,6 +205,8 @@ async def send_photo(message, prompt, response_list):
         else:
             for i in response_list[0]['images']:
                 image = types.InputFile(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
+                image_seed = api_service.get_image_seed(i)
+                caption += f"\n<b>Seed:</b>\n<code>{image_seed}</code>"
                 await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
                 await message.answer_photo(photo=image)
                 await message.answer(caption, reply_markup=keyboards.main_menu)
@@ -222,3 +229,11 @@ async def restarting_sd(message):
             await users_and_admins_notify(dp, f"✅ SD запущена - {int(current_time - start_time)}s.")
             break
         await asyncio.sleep(1)
+
+
+async def message_parse(message):
+    if message.find('&') != -1:
+        message_list = message.split('&')
+        return message_list[0], message_list[1]
+    else:
+        return -1, message

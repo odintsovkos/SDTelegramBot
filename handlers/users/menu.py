@@ -12,7 +12,7 @@ from loader import dp
 from states.all_states import SDStates
 from utils.db_services import db_service
 from utils.misc_func import change_style_db, change_lora_db, send_photo, change_model_callback, restart_sd, \
-    restarting_sd, is_sd_launched
+    restarting_sd, is_sd_launched, message_parse
 from utils.waiting_bar import waiting_bar
 
 last_prompt = ""
