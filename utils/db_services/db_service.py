@@ -32,7 +32,6 @@ async def db_create_table():
            sd_steps INT,
            sd_width_height TEXT,
            sd_cfg_scale REAL,
-           sd_restore_face INT,
            sd_batch_count INT,
            sd_hr_on_off INT,
            sd_hr_upscaler TEXT,
@@ -79,14 +78,14 @@ async def db_set_sd_settings(tg_id, setting, value):
 async def db_create_new_user_settings(tg_id: int):
     params = list(get_default_params(tg_id).values())
     async with aiosqlite.connect('users_sd_settings.db') as db:
-        await db.execute(f"""INSERT INTO users VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);""", params)
+        await db.execute(f"""INSERT INTO users VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);""", params)
         await db.commit()
 
 
 async def db_update_default_settings(tg_id: int):
     params = list(get_default_params(tg_id).values())
     settings = ['tg_id', 'sd_model', 'sd_style', 'sd_lora', 'sd_n_prompt', 'sd_sampler', 'sd_steps', 'sd_width_height',
-                'sd_cfg_scale', 'sd_restore_face', 'sd_batch_count', 'sd_hr_on_off', 'sd_hr_upscaler', 'sd_hr_steps',
+                'sd_cfg_scale', 'sd_batch_count', 'sd_hr_on_off', 'sd_hr_upscaler', 'sd_hr_steps',
                 'sd_hr_denoising_strength', 'sd_hr_upscale_by']
 
     for i in range(len(settings)):

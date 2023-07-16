@@ -20,6 +20,7 @@ class SDStates(StatesGroup):
     enter_prompt = State()
 
     settings = State()
+    gen_settings = State()
     settings_set_model = State()
     settings_set_style = State()
     settings_set_lora = State()

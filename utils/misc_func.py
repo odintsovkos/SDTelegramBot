@@ -19,10 +19,11 @@ import logging
 import os
 import threading
 import time
+
 import psutil as psutil
 from aiogram import types
 
-from keyboards.default import keyboards
+from keyboards.inline import inline_menu
 from loader import dp
 from settings.bot_config import sd_path
 from settings.sd_config import save_files, output_folder
@@ -31,6 +32,8 @@ from utils.notifier import admin_notify, users_and_admins_notify
 from utils.progress_bar import progress_bar
 from utils.sd_api import api_service
 from utils.sd_api.api_service import get_request_sd_api
+
+last_seed = ""
 
 
 async def generate_image(tg_id: int, last_prompt, seed):
@@ -44,10 +47,14 @@ async def generate_image(tg_id: int, last_prompt, seed):
         "width": int(db_result[7].split('x')[0]),
         "height": int(db_result[7].split('x')[1]),
         "sampler_name": db_result[5],
-        "restore_faces": 'true' if db_result[9] else 'false',
-        "batch_size": db_result[10],
+        "batch_size": db_result[9],
         "save_images": 'true' if save_files else 'false',
-        "seed": seed
+        "seed": seed,
+        "enable_hr": db_result[10],
+        "hr_upscaler": db_result[11],
+        "hr_second_pass_steps": db_result[12],
+        "denoising_strength": db_result[13],
+        "hr_scale": db_result[14],
     }
     if save_files:
         api_service.post_request_sd_api("options", {"outdir_txt2img_samples": f"{output_folder}"})
@@ -115,10 +122,10 @@ async def user_samplers(api_samplers, hide_user_samplers):
 
 
 async def reformat_lora(lora):
-    lora_list = lora.split('&')
-    if lora == "":
-        return lora
+    if lora is None:
+        return ""
     else:
+        lora_list = lora.split('&')
         result = (f'<lora:{x}:0.7>' for x in lora_list)
         return ', '.join(result)
 
@@ -141,7 +148,6 @@ def start_sd_process():
 
 
 def check_sd_path():
-    list_files = ""
     if sd_path != "":
         try:
             list_files = os.listdir(sd_path)
@@ -175,19 +181,23 @@ def change_model_callback(user_id, response):
     return loop
 
 
-async def send_photo(message, last_prompt, response_list):
-    sd_model = await change_sd_model(message.from_user.id)
-    lora = await db_service.db_get_sd_setting(message.from_user.id, 'sd_lora')
+async def send_photo(message, user_id, last_prompt, response_list, with_seed=False):
+    global last_seed
+    if with_seed:
+        last_prompt = last_seed + "&" + last_prompt
+    sd_model = await change_sd_model(user_id)
+    lora = await db_service.db_get_sd_setting(user_id, 'sd_lora')
+    reform_lora = await reformat_lora(lora)
     seed, prompt = await message_parse(last_prompt)
     thread_generate_image = threading.Thread(target=generate_image_callback, args=(
-        message.from_user.id, await reformat_lora(lora) + ", " + prompt, seed, response_list))
+        user_id, reform_lora + ", " + prompt, seed, response_list))
     thread_generate_image.start()
 
     chat_id, message_id = await progress_bar(message.chat.id, thread_generate_image)
 
     thread_generate_image.join()
 
-    style = await db_service.db_get_sd_setting(message.from_user.id, 'sd_style')
+    style = await db_service.db_get_sd_setting(user_id, 'sd_style')
     style_caption = f"\n<b>Styles: </b><i>{style.replace('&', ', ')}</i>"
     lora_caption = f"\n<b>LoRa: </b><i>{lora.replace('&', ', ')}</i>"
     caption = f"<b>Positive prompt:</b>\n<code>{prompt}</code>\n" \
@@ -206,33 +216,37 @@ async def send_photo(message, last_prompt, response_list):
                     image = types.InputFile(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
                     media.attach_photo(image)
                     image_seed = api_service.get_image_seed(i)
+                    last_seed = image_seed
                     caption += f"\n<b>Seed {count}:</b> <code>{image_seed}</code>"
                     count += 1
                 await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
                 await message.answer_media_group(media=media)
-                await message.answer(caption, reply_markup=keyboards.main_menu)
+                await message.answer(caption)
+                await message.answer(f"📖 Меню генерации", reply_markup=inline_menu.main_menu)
             except Exception as err:
                 await message.answer("Ошибка генерации фото, информация об ошибке уже передана администраторам",
-                                     reply_markup=keyboards.main_menu)
+                                     reply_markup=inline_menu.main_menu)
                 await admin_notify(dp, msg="[ERROR] Ошибка генерации фото\n" + str(err))
         else:
             for i in response_list[0]['images']:
                 image = types.InputFile(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
                 image_seed = api_service.get_image_seed(i)
+                last_seed = image_seed
                 caption += f"\n<b>Seed:</b> <code>{image_seed}</code>"
                 await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
                 await message.answer_photo(photo=image)
-                await message.answer(caption, reply_markup=keyboards.main_menu)
+                await message.answer(caption)
+                await message.answer(f"📖 Меню генерации", reply_markup=inline_menu.main_menu)
     else:
         await message.answer("Ошибка генерации фото, информация об ошибке уже передана администраторам",
-                             reply_markup=keyboards.main_menu)
+                             reply_markup=inline_menu.main_menu)
         await admin_notify(dp,
                            msg="[ERROR] Ошибка генерации фото\n Ошибка в функции send_photo " + str(response_list[0]))
     response_list.clear()
 
 
 async def restarting_sd(message):
-    await message.answer("⛔️ SD не отвечает...\n🔃 Перезапускаю SD!", reply_markup=keyboards.main_menu)
+    await message.answer("⛔️ SD не отвечает...\n🔃 Перезапускаю SD!", reply_markup=inline_menu.main_menu)
     await restart_sd()
     start_time = time.time()
     while True:

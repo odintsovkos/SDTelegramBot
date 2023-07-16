@@ -38,12 +38,11 @@ def get_default_params(tg_id):
               "steps": 22,
               "width_height": '640x640',
               "cfg_scale": '7.0',
-              "restore_face": 0,
               "batch_count": 1,
               "enable_hr": 0,
-              "hr_upscaler": upscalers[0]['name'],
-              "hr_second_pass_steps": 0,
-              "denoising_strength": 0,
+              "hr_upscaler": upscalers[1]['name'],
+              "hr_second_pass_steps": 12,
+              "denoising_strength": 0.2,
               "hr_scale": 2}
 
     return params
