@@ -28,11 +28,10 @@ from utils.set_bot_commands import set_default_commands
 
 async def on_startup(dispatcher):
     await db_service.db_create_table()
-    await asyncio.sleep(2)
-    await admins_and_users_initialization_in_db()
     # Устанавливаем дефолтные команды
     await set_default_commands(dispatcher)
-
+    await asyncio.sleep(4)
+    await admins_and_users_initialization_in_db()
     # Уведомляет про запуск
     await users_and_admins_notify(dispatcher, msg="📢 Бот запущен, введите команду /start для начала генерации...")
 

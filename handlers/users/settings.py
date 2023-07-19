@@ -20,7 +20,6 @@ from aiogram.types import Message, InlineKeyboardButton
 from aiogram.utils import markdown
 
 import settings.string_variables as str_var
-from keyboards.default import keyboards
 from keyboards.inline.inline_menu import settings_menu, gen_settings_menu, create_samplers_inline_keyboard, \
     inline_cancel, wh_create_keyboards, hires_menu, main_menu
 from loader import dp
@@ -118,7 +117,6 @@ async def generation_settings(callback: types.CallbackQuery, state: FSMContext):
         await callback.message.edit_text("⚙️ Настройки", reply_markup=settings_menu)
         await SDStates.settings.set()
     elif await state.get_state() == SDStates.settings.state:
-        # await callback.bot.delete_message(message_id=callback.message.message_id, chat_id=callback.message.chat.id)
         await callback.message.edit_text("📖 Меню генерации", reply_markup=main_menu)
         await SDStates.enter_prompt.set()
 
@@ -248,5 +246,6 @@ async def current_settings(callback: types.CallbackQuery):
             else:
                 await asyncio.sleep(1)
     else:
-        await callback.message.edit_text("⛔️ Перезапуск SD невозможен, ошибка в пути к папке SD", reply_markup=main_menu)
+        await callback.message.edit_text("⛔️ Перезапуск SD невозможен, ошибка в пути к папке SD",
+                                         reply_markup=main_menu)
         await SDStates.enter_prompt.set()

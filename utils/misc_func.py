@@ -14,6 +14,8 @@ SDTelegramBot распространяется в надежде, что она 
 
 import asyncio
 import base64
+import copy
+import datetime
 import io
 import logging
 import os
@@ -25,7 +27,7 @@ from aiogram import types
 
 from keyboards.inline import inline_menu
 from loader import dp
-from settings.bot_config import sd_path
+from settings.bot_config import sd_path, send_photo_without_compression
 from settings.sd_config import save_files, output_folder
 from utils.db_services import db_service
 from utils.notifier import admin_notify, users_and_admins_notify
@@ -122,12 +124,12 @@ async def user_samplers(api_samplers, hide_user_samplers):
 
 
 async def reformat_lora(lora):
-    if lora is None:
+    if lora == "":
         return ""
     else:
         lora_list = lora.split('&')
         result = (f'<lora:{x}:0.7>' for x in lora_list)
-        return ', '.join(result)
+        return ', '.join(result) + ", "
 
 
 async def kill_sd_process():
@@ -190,7 +192,7 @@ async def send_photo(message, user_id, last_prompt, response_list, with_seed=Fal
     reform_lora = await reformat_lora(lora)
     seed, prompt = await message_parse(last_prompt)
     thread_generate_image = threading.Thread(target=generate_image_callback, args=(
-        user_id, reform_lora + ", " + prompt, seed, response_list))
+        user_id, reform_lora + prompt, seed, response_list))
     thread_generate_image.start()
 
     chat_id, message_id = await progress_bar(message.chat.id, thread_generate_image)
@@ -207,7 +209,7 @@ async def send_photo(message, user_id, last_prompt, response_list, with_seed=Fal
     if lora != '':
         caption += lora_caption
 
-    if response_list[0] is not None:
+    if response_list[0] is not None and "error" not in response_list[0].keys():
         media = types.MediaGroup()
         if len(response_list[0]['images']) > 1:
             try:
@@ -229,12 +231,17 @@ async def send_photo(message, user_id, last_prompt, response_list, with_seed=Fal
                 await admin_notify(dp, msg="[ERROR] Ошибка генерации фото\n" + str(err))
         else:
             for i in response_list[0]['images']:
-                image = types.InputFile(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
                 image_seed = api_service.get_image_seed(i)
+                image = types.InputFile(io.BytesIO(base64.b64decode(i.split(",", 1)[0])),
+                                        filename=f"{prompt}_{image_seed}_{datetime.date.today()}.jpg")
+
                 last_seed = image_seed
                 caption += f"\n<b>Seed:</b> <code>{image_seed}</code>"
                 await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
+                last_image = copy.deepcopy(image)
                 await message.answer_photo(photo=image)
+                if send_photo_without_compression:
+                    await message.answer_document(last_image)
                 await message.answer(caption)
                 await message.answer(f"📖 Меню генерации", reply_markup=inline_menu.main_menu)
     else:
@@ -246,7 +253,8 @@ async def send_photo(message, user_id, last_prompt, response_list, with_seed=Fal
 
 
 async def restarting_sd(message):
-    await message.answer("⛔️ SD не отвечает...\n🔃 Перезапускаю SD!", reply_markup=inline_menu.main_menu)
+    await message.message.edit_text("⛔️ SD не отвечает...\n🔃 Перезапускаю SD!",
+                                    reply_markup=main_menu)
     await restart_sd()
     start_time = time.time()
     while True:

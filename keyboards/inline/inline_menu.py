@@ -214,7 +214,7 @@ async def create_style_keyboard(tg_id: int):
                                                                                                              'name'],
                     callback_data="style_" + sd_styles[i + 2]['name'])
             )
-        elif i + 1 == len(sd_styles):
+        elif i + 1 < len(sd_styles):
             styles_keyboard.add(
                 InlineKeyboardButton(
                     text=sd_styles[i]['name'] if sd_styles[i]['name'] not in db_styles_list else "✳️" + sd_styles[i][
@@ -244,7 +244,8 @@ async def create_lora_keyboard(tg_id: int):
     db_lora_list = await db_service.db_get_sd_setting(tg_id, 'sd_lora')
     sd_lora = api_service.get_request_sd_api('loras').json()
     lora_keyboard = InlineKeyboardMarkup()
-
+    if len(sd_lora) == 0:
+        return None
     for i in range(0, len(sd_lora), 3):
         if i + 1 < len(sd_lora) and i + 2 < len(sd_lora):
             lora_keyboard.add(
@@ -265,7 +266,7 @@ async def create_lora_keyboard(tg_id: int):
                                                                                                        'name'],
                     callback_data="lora_" + sd_lora[i + 2]['name'])
             )
-        elif i + 1 == len(sd_lora):
+        elif i + 1 < len(sd_lora):
             lora_keyboard.add(
                 InlineKeyboardButton(
                     text=sd_lora[i]['name'] if sd_lora[i]['name'] not in db_lora_list else "✳️" + sd_lora[i][

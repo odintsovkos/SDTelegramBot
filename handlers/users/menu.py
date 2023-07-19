@@ -16,11 +16,11 @@ import threading
 
 from aiogram import types
 from aiogram.dispatcher.filters import Text
-from aiogram.types import Message, InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton
 
 import settings.string_variables as str_var
-from keyboards.inline.inline_menu import create_model_keyboard, main_menu, create_lora_keyboard, create_style_keyboard, \
-    settings_menu
+from keyboards.inline.inline_menu import create_model_keyboard, create_lora_keyboard, create_style_keyboard, \
+    settings_menu, main_menu
 from loader import dp
 from settings.bot_config import ADMINS
 from states.all_states import SDStates
@@ -49,24 +49,33 @@ async def entered_prompt_handler(message: types.Message):
 
 @dp.callback_query_handler(state=SDStates.enter_prompt, text='repeat')
 async def current_settings(callback: types.CallbackQuery):
+    global last_prompt
     await callback.bot.delete_message(callback.message.chat.id, callback.message.message_id)
-    if is_sd_launched():
-        await send_photo(callback.message, callback.from_user.id, last_prompt, response_list)
+    if last_prompt.find('&') != -1:
+        last_prompt = last_prompt[last_prompt.find('&') + 1:]
+    if last_prompt != "":
+        if is_sd_launched():
+            await send_photo(callback.message, callback.from_user.id, last_prompt, response_list)
+        else:
+            await restarting_sd(callback)
+            await asyncio.sleep(2)
+            await send_photo(callback.message, callback.from_user.id, last_prompt, response_list)
     else:
-        await restarting_sd(callback)
-        await asyncio.sleep(2)
-        await send_photo(callback.message, callback.from_user.id, last_prompt, response_list)
+        await callback.message.answer("✏️ Введите Prompt", reply_markup=main_menu)
 
 
 @dp.callback_query_handler(state=SDStates.enter_prompt, text='repeat_with_seed')
 async def current_settings(callback: types.CallbackQuery):
     await callback.bot.delete_message(callback.message.chat.id, callback.message.message_id)
-    if is_sd_launched():
-        await send_photo(callback.message, callback.from_user.id, last_prompt, response_list, with_seed=True)
+    if last_prompt != "":
+        if is_sd_launched():
+            await send_photo(callback.message, callback.from_user.id, last_prompt, response_list, with_seed=True)
+        else:
+            await restarting_sd(callback)
+            await asyncio.sleep(2)
+            await send_photo(callback.message, callback.from_user.id, last_prompt, response_list, with_seed=True)
     else:
-        await restarting_sd(callback)
-        await asyncio.sleep(2)
-        await send_photo(callback.message, callback.from_user.id, last_prompt, response_list, with_seed=True)
+        await callback.message.answer("✏️ Введите Prompt", reply_markup=main_menu)
 
 
 @dp.callback_query_handler(state=SDStates.enter_prompt, text='model')
@@ -117,12 +126,9 @@ async def current_settings(callback: types.CallbackQuery):
         await db_service.db_set_sd_settings(callback.from_user.id, "sd_style", "")
         await SDStates.enter_prompt.set()
     else:
-        text_style = action
-        if action[0] == '>':
-            text_style = action[3:]
-        is_changed = await change_style_db(callback.from_user.id, text_style)
+        is_changed = await change_style_db(callback.from_user.id, action)
         styles_keyboard = await create_style_keyboard(callback.from_user.id)
-        await callback.message.edit_text(f"Стиль {text_style} {'установлен' if is_changed else 'отключен'}",
+        await callback.message.edit_text(f"Стиль {action} {'установлен' if is_changed else 'отключен'}",
                                          reply_markup=styles_keyboard)
 
 
@@ -131,6 +137,10 @@ async def current_settings(callback: types.CallbackQuery):
     global callback_data
     callback_data = callback
     lora_keyboard = await create_lora_keyboard(callback.from_user.id)
+    if lora_keyboard is None:
+        await callback.message.edit_text("LoRA не найдены", reply_markup=main_menu)
+        await SDStates.enter_prompt.set()
+        return
     await callback.message.edit_text(f"👇🏻 Выбери LoRa", reply_markup=lora_keyboard)
     await SDStates.settings_set_lora.set()
 
@@ -147,12 +157,9 @@ async def current_settings(callback: types.CallbackQuery):
         await db_service.db_set_sd_settings(callback.from_user.id, "sd_lora", "")
         await SDStates.enter_prompt.set()
     else:
-        text_style = action
-        if action[0] == '>':
-            text_style = action[3:]
-        is_changed = await change_lora_db(callback.from_user.id, text_style)
+        is_changed = await change_lora_db(callback.from_user.id, action)
         lora_keyboard = await create_lora_keyboard(callback.from_user.id)
-        await callback.message.edit_text(f"LoRa {text_style} {'установлен' if is_changed else 'отключен'}",
+        await callback.message.edit_text(f"LoRa {action} {'установлен' if is_changed else 'отключен'}",
                                          reply_markup=lora_keyboard)
 
 
