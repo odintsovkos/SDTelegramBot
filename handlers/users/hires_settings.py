@@ -17,14 +17,13 @@ from aiogram.dispatcher.filters import Text
 from aiogram.types import Message
 
 from keyboards.default import keyboards
-from keyboards.inline.inline_menu import inline_cancel, create_hr_upscalers_keyboard, hires_menu, settings_menu
+from keyboards.inline.inline_menu import inline_cancel,create_hr_upscalers_keyboard, hires_menu, settings_menu
 from loader import dp
 from states.all_states import SDStates
 import settings.string_variables as str_var
 from utils.db_services import db_service
 
 callback_data = None
-
 
 @dp.message_handler(state=SDStates.hr_settings, content_types=types.ContentTypes.TEXT)
 async def settings_buttons_handler(message: types.Message):

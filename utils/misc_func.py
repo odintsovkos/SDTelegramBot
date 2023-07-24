@@ -60,7 +60,7 @@ async def generate_image(tg_id: int, last_prompt, seed):
         "alwayson_scripts": {
             "ADetailer": {
                 "args": [
-                    True,
+                    True if db_result[15] == 1 else False,
                     {
                         "ad_model": db_result[16],
                         "ad_prompt": db_result[17],
@@ -68,6 +68,7 @@ async def generate_image(tg_id: int, last_prompt, seed):
                         "ad_confidence": db_result[19],
                         "ad_mask_blur": db_result[20],
                         "ad_denoising_strength": db_result[21],
+                        "ad_use_inpaint_width_height": "true",
                         "ad_inpaint_width": int(db_result[22].split("x")[0]),
                         "ad_inpaint_height": int(db_result[22].split("x")[1]),
                         "ad_steps": db_result[23],
@@ -79,6 +80,7 @@ async def generate_image(tg_id: int, last_prompt, seed):
             }
         },
     }
+
 
     if save_files:
         api_service.post_request_sd_api(

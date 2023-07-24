@@ -110,7 +110,7 @@ hires_menu = InlineKeyboardMarkup(
 adetailer_menu = InlineKeyboardMarkup(
     inline_keyboard=[
         [
-            InlineKeyboardButton(text=str_var.ad_on_of, callback_data='ad_on_off'),
+            InlineKeyboardButton(text=str_var.ad_on_off, callback_data='ad_on_off'),
         ],
         [
             InlineKeyboardButton(text=str_var.ad_model, callback_data='ad_model'),
@@ -196,6 +196,36 @@ async def create_hr_upscalers_keyboard():
             inline_kb_full.add(
                 InlineKeyboardButton(text=api_result[i]['name'], callback_data="upscaler_" + api_result[i]['name']))
     inline_kb_full.add(InlineKeyboardButton(text=str_var.cancel, callback_data="cancel"))
+    return inline_kb_full
+
+async def create_ad_model_keyboard():
+    model_list = [
+        "face_yolov8n.pt",
+        "face_yolov8s.pt",
+        "hand_yolov8n.pt",
+        "person_yolov8n-seg.pt",
+        "person_yolov8s-seg.pt",
+        "mediapipe_face_full",
+        "mediapipe_face_short",
+        "mediapipe_face_mesh",
+        "mediapipe_face_mesh_eyes_only"
+    ]
+
+    inline_kb_full = InlineKeyboardMarkup()
+
+    for i in range(0, len(model_list), 2):
+        if i + 1 < len(model_list):
+            inline_kb_full.add(
+                InlineKeyboardButton(text=model_list[i], callback_data="ad_model_" + model_list[i]),
+                InlineKeyboardButton(text=model_list[i + 1], callback_data="ad_model_" + model_list[i + 1])
+            )
+        else:
+            inline_kb_full.add(
+                InlineKeyboardButton(text=model_list[i], callback_data="ad_model_" + model_list[i])
+            )
+
+    inline_kb_full.add(InlineKeyboardButton(text="Cancel", callback_data="cancel"))
+
     return inline_kb_full
 
 

@@ -146,7 +146,7 @@ async def generation_settings(callback: types.CallbackQuery):
 @dp.callback_query_handler(state=SDStates.settings, text='ad_settings')
 async def generation_settings(callback: types.CallbackQuery):
     await callback.message.edit_text("👩 Настройки Adetailer", reply_markup=adetailer_menu)
-    await SDStates.hr_settings.set()
+    await SDStates.ad_settings.set()
 
 
 @dp.callback_query_handler(state=SDStates.gen_settings, text='negative_prompt')

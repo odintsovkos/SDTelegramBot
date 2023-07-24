@@ -45,7 +45,7 @@ hr_denoising_strength = "Denoising Strength"
 hr_upscale_by = "Upscale by"
 
 # Adetailer settings menu
-ad_on_of = "On/Off"
+ad_on_off = "On/Off"
 ad_model = "Модель"
 ad_prompt = "👌Positive prompt"
 ad_neg_prompt = "🙅 Negative Prompt"
