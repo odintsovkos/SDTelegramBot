@@ -34,6 +34,7 @@ batch_count = "👩‍👩‍👧‍👧 Batch count"
 reset_settings = "📝 Сброс настроек"
 restart_sd = "🆘 Перезапуск SD"
 hr_settings = "🔍 HR Settings"
+ad_settings = "👩 Adetailer Settings"
 gen_settings = "⚙️ Настройки генерации"
 
 # Hires settings menu
@@ -42,6 +43,17 @@ hr_upscaler = "Upscaler"
 hr_steps = "Steps"
 hr_denoising_strength = "Denoising Strength"
 hr_upscale_by = "Upscale by"
+
+# Adetailer settings menu
+ad_on_of = "On/Off"
+ad_model = "Модель"
+ad_prompt = "👌Positive prompt"
+ad_neg_prompt = "🙅 Negative Prompt"
+ad_confidence = "👩Сила определения лица"
+ad_mask_blur = "Mask Blur"
+ad_denoising_strength = "Denoising Strength"
+ad_wh = "📐 Width x Height"
+ad_steps  = "👣 Steps"
 
 # Other menu
 confirm = "✅ Подтвердить"

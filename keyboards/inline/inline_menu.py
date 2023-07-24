@@ -60,6 +60,9 @@ settings_menu = InlineKeyboardMarkup(
             InlineKeyboardButton(text=str_var.hr_settings, callback_data='hr_settings'),
         ],
         [
+            InlineKeyboardButton(text=str_var.ad_settings, callback_data='ad_settings'),
+        ],
+        [
             InlineKeyboardButton(text=str_var.reset_settings, callback_data='reset_settings'),
         ],
         [
@@ -99,6 +102,33 @@ hires_menu = InlineKeyboardMarkup(
             InlineKeyboardButton(text=str_var.hr_upscale_by, callback_data='hr_upscale_by'),
         ],
         [
+            InlineKeyboardButton(text=str_var.cancel, callback_data='cancel'),
+        ],
+    ],
+)
+
+adetailer_menu = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text=str_var.ad_on_of, callback_data='ad_on_off'),
+        ],
+        [
+            InlineKeyboardButton(text=str_var.ad_model, callback_data='ad_model'),
+        ],
+        [
+            InlineKeyboardButton(text=str_var.ad_prompt, callback_data='ad_prompt'),
+            InlineKeyboardButton(text=str_var.ad_neg_prompt, callback_data='ad_neg_prompt'),
+        ],
+        [
+            InlineKeyboardButton(text=str_var.ad_confidence, callback_data='ad_confidence'),
+            InlineKeyboardButton(text=str_var.ad_mask_blur, callback_data='ad_mask_blur'),
+        ],
+        [
+            InlineKeyboardButton(text=str_var.ad_denoising_strength, callback_data='ad_denoising_strength'),
+            InlineKeyboardButton(text=str_var.ad_wh, callback_data='ad_wh'),
+        ],
+        [
+            InlineKeyboardButton(text=str_var.ad_steps, callback_data='ad_steps'),
             InlineKeyboardButton(text=str_var.cancel, callback_data='cancel'),
         ],
     ],

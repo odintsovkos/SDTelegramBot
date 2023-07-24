@@ -43,25 +43,50 @@ async def generate_image(tg_id: int, last_prompt, seed):
     params = {
         "prompt": last_prompt,
         "negative_prompt": db_result[4],
-        "styles": db_result[2].split('&'),
+        "styles": db_result[2].split("&"),
         "cfg_scale": db_result[8],
         "steps": db_result[6],
-        "width": int(db_result[7].split('x')[0]),
-        "height": int(db_result[7].split('x')[1]),
+        "width": int(db_result[7].split("x")[0]),
+        "height": int(db_result[7].split("x")[1]),
         "sampler_name": db_result[5],
         "batch_size": db_result[9],
-        "save_images": 'true' if save_files else 'false',
+        "save_images": "true" if save_files else "false",
         "seed": seed,
         "enable_hr": db_result[10],
         "hr_upscaler": db_result[11],
         "hr_second_pass_steps": db_result[12],
         "denoising_strength": db_result[13],
         "hr_scale": db_result[14],
+        "alwayson_scripts": {
+            "ADetailer": {
+                "args": [
+                    True,
+                    {
+                        "ad_model": db_result[16],
+                        "ad_prompt": db_result[17],
+                        "ad_negative_prompt": db_result[18],
+                        "ad_confidence": db_result[19],
+                        "ad_mask_blur": db_result[20],
+                        "ad_denoising_strength": db_result[21],
+                        "ad_inpaint_width": int(db_result[22].split("x")[0]),
+                        "ad_inpaint_height": int(db_result[22].split("x")[1]),
+                        "ad_steps": db_result[23],
+                    },
+                    # {
+                    #     "ad_model": "hand_yolov8n.pt",
+                    # }
+                ]
+            }
+        },
     }
+
     if save_files:
-        api_service.post_request_sd_api("options", {"outdir_txt2img_samples": f"{output_folder}"})
+        api_service.post_request_sd_api(
+            "options", {"outdir_txt2img_samples": f"{output_folder}"}
+        )
     response = api_service.post_request_sd_api("txt2img", params)
     return response
+
 
 
 async def change_sd_model(tg_id: int):

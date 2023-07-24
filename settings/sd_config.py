@@ -43,6 +43,16 @@ def get_default_params(tg_id):
               "hr_upscaler": upscalers[1]['name'],
               "hr_second_pass_steps": 12,
               "denoising_strength": 0.2,
-              "hr_scale": 2}
+              "hr_scale": 2,
+              "ad_on_off" : True,
+              "ad_model": "face_yolov8s.pt",
+              "ad_prompt": "face",
+              "ad_negative_prompt": "",
+              "ad_confidence": 0.3,
+              "ad_mask_blur": 4,
+              "ad_denoising_strength": 0.4,
+              "ad_inpaint_width_height": "512x512",
+              "ad_steps": 22,
+              }
 
     return params

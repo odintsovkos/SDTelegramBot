@@ -39,6 +39,18 @@ class SDStates(StatesGroup):
     hr_set_denoising_strength = State()
     hr_set_upscale_by = State()
 
+    ad_settings = State()
+    ad_on_off = State()
+    ad_change_model = State()
+    ad_set_prompt = State()
+    ad_set_neg_prompt = State()
+    ad_set_confidence = State()
+    ad_set_mask_blur = State()
+    ad_set_denoising_strength = State()
+    ad_set_wh = State()
+    ad_set_steps = State()
+
+
     restart_sd = State()
 
 
