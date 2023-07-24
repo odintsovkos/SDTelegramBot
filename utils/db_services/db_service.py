@@ -47,7 +47,8 @@ async def db_create_table():
            ad_mask_blur INT,
            ad_denoising_strength REAL,
            ad_inpaint_width_height TEXT,
-           ad_steps INT
+           ad_steps INT,
+           auto_translate INT              
            );
         """)
         await db.commit()
@@ -90,7 +91,7 @@ async def db_set_sd_settings(tg_id, setting, value):
 async def db_create_new_user_settings(tg_id: int):
     params = list(get_default_params(tg_id).values())
     async with aiosqlite.connect('users_sd_settings.db') as db:
-        await db.execute(f"""INSERT INTO users VALUES(?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);""", params)
+        await db.execute(f"""INSERT INTO users VALUES(?,?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);""", params)
         await db.commit()
 
 async def db_update_default_settings(tg_id: int):
@@ -98,7 +99,7 @@ async def db_update_default_settings(tg_id: int):
     settings = ['tg_id', 'sd_model', 'sd_style', 'sd_lora', 'sd_n_prompt', 'sd_sampler', 'sd_steps', 'sd_width_height',
                 'sd_cfg_scale', 'sd_batch_count', 'sd_hr_on_off', 'sd_hr_upscaler', 'sd_hr_steps',
                 'sd_hr_denoising_strength', 'sd_hr_upscale_by',"ad_on_off", 'ad_model', 'ad_prompt', 'ad_negative_prompt',
-                'ad_confidence', 'ad_mask_blur', 'ad_denoising_strength', 'ad_inpaint_width_height', 'ad_steps']
+                'ad_confidence', 'ad_mask_blur', 'ad_denoising_strength', 'ad_inpaint_width_height', 'ad_steps',"auto_translate"]
 
 
     for i in range(len(settings)):

@@ -20,7 +20,7 @@ from aiogram.types import Message, InlineKeyboardButton
 from aiogram.utils import markdown
 
 import settings.string_variables as str_var
-from keyboards.inline.inline_menu import settings_menu, gen_settings_menu, create_samplers_inline_keyboard, \
+from keyboards.inline.inline_menu import settings_menu,other_settings, gen_settings_menu, create_samplers_inline_keyboard, \
     inline_cancel, wh_create_keyboards, hires_menu, main_menu, adetailer_menu
 from loader import dp
 from settings.bot_config import ADMINS
@@ -147,6 +147,11 @@ async def generation_settings(callback: types.CallbackQuery):
 async def generation_settings(callback: types.CallbackQuery):
     await callback.message.edit_text("👩 Настройки Adetailer", reply_markup=adetailer_menu)
     await SDStates.ad_settings.set()
+
+@dp.callback_query_handler(state=SDStates.settings, text='other_settings')
+async def generation_settings(callback: types.CallbackQuery):
+    await callback.message.edit_text("Другие настройки", reply_markup=other_settings)
+    await SDStates.other_settings.set()
 
 
 @dp.callback_query_handler(state=SDStates.gen_settings, text='negative_prompt')

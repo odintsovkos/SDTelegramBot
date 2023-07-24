@@ -53,6 +53,7 @@ def get_default_params(tg_id):
               "ad_denoising_strength": 0.4,
               "ad_inpaint_width_height": "512x512",
               "ad_steps": 22,
+              "enable_auto_translate" : False,
               }
 
     return params

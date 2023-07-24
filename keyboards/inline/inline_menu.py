@@ -61,6 +61,7 @@ settings_menu = InlineKeyboardMarkup(
         ],
         [
             InlineKeyboardButton(text=str_var.ad_settings, callback_data='ad_settings'),
+            InlineKeyboardButton(text=str_var.other_settings, callback_data='other_settings'),
         ],
         [
             InlineKeyboardButton(text=str_var.reset_settings, callback_data='reset_settings'),
@@ -131,6 +132,17 @@ adetailer_menu = InlineKeyboardMarkup(
             InlineKeyboardButton(text=str_var.ad_steps, callback_data='ad_steps'),
             InlineKeyboardButton(text=str_var.cancel, callback_data='cancel'),
         ],
+    ],
+)
+
+other_settings = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text=str_var.enable_auto_translate, callback_data='enable_auto_translate'),
+        ],
+        [
+            InlineKeyboardButton(text=str_var.cancel, callback_data='cancel'),
+        ]
     ],
 )
 

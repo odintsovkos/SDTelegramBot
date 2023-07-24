@@ -50,6 +50,9 @@ class SDStates(StatesGroup):
     ad_set_wh = State()
     ad_set_steps = State()
 
+    other_settings = State()
+    enable_auto_translate = State()
+
 
     restart_sd = State()
 

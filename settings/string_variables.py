@@ -36,6 +36,7 @@ restart_sd = "🆘 Перезапуск SD"
 hr_settings = "🔍 HR Settings"
 ad_settings = "👩 Adetailer Settings"
 gen_settings = "⚙️ Настройки генерации"
+other_settings = "Другие настройки"
 
 # Hires settings menu
 hr_on_off = "On/Off"
@@ -59,6 +60,7 @@ ad_steps  = "👣 Steps"
 confirm = "✅ Подтвердить"
 disable_all_styles = "🚫 Отключить все стили"
 disable_all_loras = "🚫 Отключить все LoRa"
+enable_auto_translate = "Включить/Отключить автоперевод"
 
 # Width x Height
 wh_buttons = ["512x512", "768x768", "1024x1024", "512x768", "768x512", "768x576", "576x768", "768x432"]

@@ -34,14 +34,28 @@ from utils.notifier import admin_notify, users_and_admins_notify
 from utils.progress_bar import progress_bar
 from utils.sd_api import api_service
 from utils.sd_api.api_service import get_request_sd_api
+from easygoogletranslate import EasyGoogleTranslate
 
 last_seed = ""
 
 
+async def translate_prompt(prompt):
+    translator = EasyGoogleTranslate(
+    source_language='ru',
+    target_language='en',
+    timeout=10
+    )
+
+    return translator.translate(prompt)
+
 async def generate_image(tg_id: int, last_prompt, seed):
     db_result = await db_service.db_get_sd_settings(tg_id)
+    
+    # Переводим промт если включен автоперевод
+    final_prompt = await translate_prompt(last_prompt) if db_result[24] == 1 else last_prompt
+
     params = {
-        "prompt": last_prompt,
+        "prompt": final_prompt,
         "negative_prompt": db_result[4],
         "styles": db_result[2].split("&"),
         "cfg_scale": db_result[8],
