@@ -33,7 +33,7 @@ from utils.db_services import db_service
 from utils.notifier import admin_notify, users_and_admins_notify
 from utils.progress_bar import progress_bar
 from utils.sd_api import api_service
-from utils.sd_api.api_service import get_request_sd_api,get_model_name_by_hash
+from utils.sd_api.api_service import get_request_sd_api,get_model_name_by_hash,check_if_script_exists
 from easygoogletranslate import EasyGoogleTranslate
 
 last_seed = ""
@@ -49,10 +49,14 @@ async def translate_prompt(prompt):
     return translator.translate(prompt)
 
 async def generate_image(tg_id: int, last_prompt, seed):
+
     db_result = await db_service.db_get_sd_settings(tg_id)
     
     # Переводим промт если включен автоперевод
     final_prompt = await translate_prompt(last_prompt) if db_result[24] == 1 else last_prompt
+
+
+    check_adetailer = check_if_script_exists("adetailer")
 
     params = {
         "prompt": final_prompt,
@@ -71,30 +75,29 @@ async def generate_image(tg_id: int, last_prompt, seed):
         "hr_second_pass_steps": db_result[12],
         "denoising_strength": db_result[13],
         "hr_scale": db_result[14],
-        "alwayson_scripts": {
-            "ADetailer": {
-                "args": [
-                    True if db_result[15] == 1 else False,
-                    {
-                        "ad_model": db_result[16],
-                        "ad_prompt": db_result[17],
-                        "ad_negative_prompt": db_result[18],
-                        "ad_confidence": db_result[19],
-                        "ad_mask_blur": db_result[20],
-                        "ad_denoising_strength": db_result[21],
-                        "ad_use_inpaint_width_height": "true",
-                        "ad_inpaint_width": int(db_result[22].split("x")[0]),
-                        "ad_inpaint_height": int(db_result[22].split("x")[1]),
-                        "ad_steps": db_result[23],
-                    },
-                    # {
-                    #     "ad_model": "hand_yolov8n.pt",
-                    # }
-                ]
-            }
-        },
+        "alwayson_scripts": {},
     }
 
+    if check_adetailer:
+        params["alwayson_scripts"]["ADetailer"] = {
+            "args": [
+                True if db_result[15] == 1 else False,
+                {
+                    "ad_model": db_result[16],
+                    "ad_prompt": db_result[17],
+                    "ad_negative_prompt": db_result[18],
+                    "ad_confidence": db_result[19],
+                    "ad_mask_blur": db_result[20],
+                    "ad_denoising_strength": db_result[21],
+                    "ad_use_inpaint_width_height": "true",
+                    "ad_inpaint_width": int(db_result[22].split("x")[0]),
+                    "ad_inpaint_height": int(db_result[22].split("x")[1]),
+                    "ad_steps": db_result[23],
+                },
+            ]
+        }
+    else:
+        print("Adetailer не установлен")
 
     if save_files:
         api_service.post_request_sd_api(

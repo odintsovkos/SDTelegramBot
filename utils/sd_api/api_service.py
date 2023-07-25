@@ -63,3 +63,10 @@ def get_model_name_by_hash(hash):
         if model['sha256'] == hash:
             return model['model_name']
     return None
+
+def check_if_script_exists(script_name):
+    scripts = get_request_sd_api("scripts").json()["txt2img"]
+    for script in scripts:
+        if script == script_name:
+            return True
+    return False
