@@ -46,13 +46,13 @@ hr_denoising_strength = "Denoising Strength"
 hr_upscale_by = "Upscale by"
 
 # Adetailer settings menu
-ad_on_off = "On/Off"
-ad_model = "Модель"
+ad_on_off = "💡 On/Off"
+ad_model = "🤖 Модель"
 ad_prompt = "👌Positive prompt"
 ad_neg_prompt = "🙅 Negative Prompt"
 ad_confidence = "👩Сила определения лица"
-ad_mask_blur = "Mask Blur"
-ad_denoising_strength = "Denoising Strength"
+ad_mask_blur = "🌫️ Mask Blur"
+ad_denoising_strength = "🙉 Denoising Strength"
 ad_wh = "📐 Width x Height"
 ad_steps  = "👣 Steps"
 
@@ -60,7 +60,7 @@ ad_steps  = "👣 Steps"
 confirm = "✅ Подтвердить"
 disable_all_styles = "🚫 Отключить все стили"
 disable_all_loras = "🚫 Отключить все LoRa"
-enable_auto_translate = "Включить/Отключить автоперевод"
+enable_auto_translate = "☑ Включить/Отключить автоперевод"
 
 # Width x Height
 wh_buttons = ["512x512", "768x768", "1024x1024", "512x768", "768x512", "768x576", "576x768", "768x432"]

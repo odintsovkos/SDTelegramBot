@@ -39,27 +39,31 @@ from easygoogletranslate import EasyGoogleTranslate
 last_seed = ""
 
 
-async def translate_prompt(prompt):
+async def translate_prompt(prompt,tg_id):
+    db_result = await db_service.db_get_sd_settings(tg_id)
+
     translator = EasyGoogleTranslate(
     source_language='ru',
     target_language='en',
     timeout=10
     )
 
-    return translator.translate(prompt)
+    result = translator.translate(prompt)
+
+    if(db_result[24] == 1):
+        return result
+    else:
+        return prompt
 
 async def generate_image(tg_id: int, last_prompt, seed):
 
     db_result = await db_service.db_get_sd_settings(tg_id)
     
-    # Переводим промт если включен автоперевод
-    final_prompt = await translate_prompt(last_prompt) if db_result[24] == 1 else last_prompt
-
-
+    # Проверяем на наличие aDetailer
     check_adetailer = check_if_script_exists("adetailer")
 
     params = {
-        "prompt": final_prompt,
+        "prompt": last_prompt,
         "negative_prompt": db_result[4],
         "styles": db_result[2].split("&"),
         "cfg_scale": db_result[8],

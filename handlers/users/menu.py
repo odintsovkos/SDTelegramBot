@@ -25,7 +25,7 @@ from loader import dp
 from settings.bot_config import ADMINS
 from states.all_states import SDStates
 from utils.db_services import db_service
-from utils.misc_func import change_style_db, change_lora_db, send_photo, change_model_callback, restarting_sd, \
+from utils.misc_func import change_style_db, change_lora_db, send_photo, change_model_callback, restarting_sd,translate_prompt, \
     is_sd_launched
 from utils.waiting_bar import waiting_bar
 
@@ -37,7 +37,10 @@ callback_data = None
 @dp.message_handler(state=SDStates.enter_prompt, content_types=types.ContentTypes.TEXT)
 async def entered_prompt_handler(message: types.Message):
     global last_prompt
-    last_prompt = message['text']
+    
+    result = await translate_prompt(message['text'],message.from_user.id)
+    last_prompt = result
+
     await message.bot.delete_message(message.chat.id, message.message_id)
     if is_sd_launched():
         await send_photo(message, message.from_user.id, last_prompt, response_list)
