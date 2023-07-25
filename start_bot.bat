@@ -1,4 +1,4 @@
-git pull
+::git pull
 @echo off
 
 if not defined PYTHON (set PYTHON=python)
@@ -43,6 +43,7 @@ echo venv %PYTHON%
 goto :install_requirements
 
 :install_requirements
+%PYTHON% -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 %PYTHON% -m pip install -r requirements.txt
 echo Requirements Install Successfully
 

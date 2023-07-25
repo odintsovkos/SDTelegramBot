@@ -46,14 +46,14 @@ def get_default_params(tg_id):
               "hr_scale": 2,
               "ad_on_off" : True,
               "ad_model": "face_yolov8s.pt",
-              "ad_prompt": "face",
+              "ad_prompt": "",
               "ad_negative_prompt": "",
               "ad_confidence": 0.3,
               "ad_mask_blur": 4,
               "ad_denoising_strength": 0.4,
               "ad_inpaint_width_height": "512x512",
               "ad_steps": 22,
-              "enable_auto_translate" : False,
+              "enable_auto_translate" : 0,
               }
 
     return params

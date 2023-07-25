@@ -13,6 +13,7 @@ SDTelegramBot распространяется в надежде, что она 
 
 import asyncio
 import threading
+import os
 
 from aiogram import types
 from aiogram.dispatcher.filters import Text
@@ -25,19 +26,72 @@ from loader import dp
 from settings.bot_config import ADMINS
 from states.all_states import SDStates
 from utils.db_services import db_service
-from utils.misc_func import change_style_db, change_lora_db, send_photo, change_model_callback, restarting_sd, \
+from utils.misc_func import change_style_db, change_lora_db, send_photo, change_model_callback, restarting_sd,translate_prompt, \
     is_sd_launched
-from utils.waiting_bar import waiting_bar
+from utils.waiting_bar import waiting_bar,waiting_bar_trascribe_audio
+from utils.transcribe import transcribe_audio
+
+from concurrent.futures import ThreadPoolExecutor
 
 last_prompt = ""
 response_list = []
 callback_data = None
 
 
+@dp.message_handler(state=SDStates.enter_prompt,content_types=types.ContentType.VOICE)
+async def handle_voice_messages(message: types.Message):
+    # Get file ID
+    audio_file_id = message.voice.file_id
+
+    # Get file information
+    file_info = await message.bot.get_file(audio_file_id)
+    file_path = file_info.file_path
+
+    # Extract the filename from the file path
+    filename = os.path.basename(file_path)
+
+    # Define the path where you want to store the file
+    destination = os.path.join('temp', filename)
+
+    # Download and save the file
+    await message.bot.download_file(file_path, destination)
+
+    # Transcribe
+    with ThreadPoolExecutor() as executor:
+        future = executor.submit(transcribe_audio, destination)
+        # Display waiting bar
+        chat_id,message_id = await waiting_bar_trascribe_audio(message.chat.id, future)
+        result = future.result()
+        print(result)
+        await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
+
+    # Process the result
+    global last_prompt
+    result = await translate_prompt(result, message.from_user.id,True)
+    last_prompt = result
+
+    await message.bot.delete_message(message.chat.id, message.message_id)
+    if is_sd_launched():
+        await send_photo(message, message.from_user.id, last_prompt, response_list)
+    else:
+        await restarting_sd(message)
+        await asyncio.sleep(2)
+        await send_photo(message, message.from_user.id, last_prompt, response_list)
+
+    # Delete the file
+    try:
+        os.remove(destination)
+    except Exception as e:
+        print(f"Error occurred while deleting file {destination}: {e}")
+
+
 @dp.message_handler(state=SDStates.enter_prompt, content_types=types.ContentTypes.TEXT)
 async def entered_prompt_handler(message: types.Message):
     global last_prompt
-    last_prompt = message['text']
+    
+    result = await translate_prompt(message['text'],message.from_user.id)
+    last_prompt = result
+
     await message.bot.delete_message(message.chat.id, message.message_id)
     if is_sd_launched():
         await send_photo(message, message.from_user.id, last_prompt, response_list)
