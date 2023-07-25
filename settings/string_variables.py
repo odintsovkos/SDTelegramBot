@@ -60,7 +60,13 @@ ad_steps  = "👣 Steps"
 confirm = "✅ Подтвердить"
 disable_all_styles = "🚫 Отключить все стили"
 disable_all_loras = "🚫 Отключить все LoRa"
+
+#Whisper settings
 enable_auto_translate = "☑ Включить/Отключить автоперевод"
+enable_whisper_transcribe = "👄 Whisper" 
+whisper_model = "Whisper Модель"
+whisper_vod = "Whipsper VOD"
+whisper_lang = "Whisper Язык"
 
 # Width x Height
 wh_buttons = ["512x512", "768x768", "1024x1024", "512x768", "768x512", "768x576", "576x768", "768x432"]

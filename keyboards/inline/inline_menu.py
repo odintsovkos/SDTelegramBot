@@ -139,6 +139,15 @@ other_settings = InlineKeyboardMarkup(
     inline_keyboard=[
         [
             InlineKeyboardButton(text=str_var.enable_auto_translate, callback_data='enable_auto_translate'),
+            InlineKeyboardButton(text=str_var.enable_whisper_transcribe, callback_data='enable_whisper_transcribe'),
+        ],
+        [
+            InlineKeyboardButton(text=str_var.whisper_model, callback_data='whisper_model'),
+            InlineKeyboardButton(text=str_var.whisper_vod, callback_data='whisper_vod'),
+            
+        ],
+        [
+            InlineKeyboardButton(text=str_var.whisper_lang, callback_data='whisper_lang'),
         ],
         [
             InlineKeyboardButton(text=str_var.cancel, callback_data='cancel'),
@@ -152,6 +161,18 @@ inline_cancel = InlineKeyboardMarkup(
             InlineKeyboardButton(text=str_var.cancel, callback_data='cancel'),
         ]
     ]
+)
+
+whisper_model_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text='medium', callback_data='medium'),
+            InlineKeyboardButton(text='large-v2', callback_data='large-v2'),
+        ],
+        [
+            InlineKeyboardButton(text=str_var.cancel, callback_data='cancel'),
+        ]
+    ],
 )
 
 

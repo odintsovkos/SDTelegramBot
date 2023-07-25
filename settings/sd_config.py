@@ -54,6 +54,10 @@ def get_default_params(tg_id):
               "ad_inpaint_width_height": "512x512",
               "ad_steps": 22,
               "enable_auto_translate" : 0,
+              "enable_whisper_transcribe" : 0,
+              "whisper_model" : "medium",
+              "whisper_vod" : 1,
+              "whisper_language" : "ru",
               }
 
     return params

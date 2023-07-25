@@ -40,49 +40,53 @@ callback_data = None
 
 @dp.message_handler(state=SDStates.enter_prompt,content_types=types.ContentType.VOICE)
 async def handle_voice_messages(message: types.Message):
-    # Get file ID
-    audio_file_id = message.voice.file_id
 
-    # Get file information
-    file_info = await message.bot.get_file(audio_file_id)
-    file_path = file_info.file_path
+    db_result = await db_service.db_get_sd_settings(message.from_user.id)
+    if(db_result[25] == 1):
+        # Get file ID
+        audio_file_id = message.voice.file_id
 
-    # Extract the filename from the file path
-    filename = os.path.basename(file_path)
+        # Get file information
+        file_info = await message.bot.get_file(audio_file_id)
+        file_path = file_info.file_path
 
-    # Define the path where you want to store the file
-    destination = os.path.join('temp', filename)
+        # Extract the filename from the file path
+        filename = os.path.basename(file_path)
 
-    # Download and save the file
-    await message.bot.download_file(file_path, destination)
+        # Define the path where you want to store the file
+        destination = os.path.join('temp', filename)
 
-    # Transcribe
-    with ThreadPoolExecutor() as executor:
-        future = executor.submit(transcribe_audio, destination)
-        # Display waiting bar
-        chat_id,message_id = await waiting_bar_trascribe_audio(message.chat.id, future)
-        result = future.result()
-        print(result)
-        await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
+        # Download and save the file
+        await message.bot.download_file(file_path, destination)
+        print(db_result[26],"cuda",db_result[27],db_result[28])
 
-    # Process the result
-    global last_prompt
-    result = await translate_prompt(result, message.from_user.id,True)
-    last_prompt = result
+        # Transcribe
+        with ThreadPoolExecutor() as executor:
+            future = executor.submit(transcribe_audio, destination,db_result[26],"cuda",db_result[27],db_result[28])
+            # Display waiting bar
+            chat_id,message_id = await waiting_bar_trascribe_audio(message.chat.id, future)
+            result = future.result()
+            await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
 
-    await message.bot.delete_message(message.chat.id, message.message_id)
-    if is_sd_launched():
-        await send_photo(message, message.from_user.id, last_prompt, response_list)
+        # Process the result
+        global last_prompt
+        result = await translate_prompt(result, message.from_user.id,True)
+        last_prompt = result
+
+        await message.bot.delete_message(message.chat.id, message.message_id)
+        if is_sd_launched():
+            await send_photo(message, message.from_user.id, last_prompt, response_list)
+        else:
+            await restarting_sd(message)
+            await asyncio.sleep(2)
+            await send_photo(message, message.from_user.id, last_prompt, response_list)
+        # Delete the file
+        try:
+            os.remove(destination)
+        except Exception as e:
+            print(f"Error occurred while deleting file {destination}: {e}")
     else:
-        await restarting_sd(message)
-        await asyncio.sleep(2)
-        await send_photo(message, message.from_user.id, last_prompt, response_list)
-
-    # Delete the file
-    try:
-        os.remove(destination)
-    except Exception as e:
-        print(f"Error occurred while deleting file {destination}: {e}")
+        await message.bot.send_message(message.chat.id,"Whisper отключенн, голосовые сообщения не поддерживаются")
 
 
 @dp.message_handler(state=SDStates.enter_prompt, content_types=types.ContentTypes.TEXT)

@@ -52,7 +52,10 @@ class SDStates(StatesGroup):
 
     other_settings = State()
     enable_auto_translate = State()
-
+    enable_whisper_transcribe = State()
+    whisper_model = State()
+    whisper_vod = State()
+    whisper_lang = State()
 
     restart_sd = State()
 
