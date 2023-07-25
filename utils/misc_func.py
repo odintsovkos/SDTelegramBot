@@ -33,7 +33,7 @@ from utils.db_services import db_service
 from utils.notifier import admin_notify, users_and_admins_notify
 from utils.progress_bar import progress_bar
 from utils.sd_api import api_service
-from utils.sd_api.api_service import get_request_sd_api
+from utils.sd_api.api_service import get_request_sd_api,get_model_name_by_hash
 from easygoogletranslate import EasyGoogleTranslate
 
 last_seed = ""
@@ -104,10 +104,13 @@ async def generate_image(tg_id: int, last_prompt, seed):
     return response
 
 
-
 async def change_sd_model(tg_id: int):
-    sd_model = api_service.get_request_sd_api("options").json()['sd_model_checkpoint']
+
+    # C версии 1.5 из options был убран sd_model_checkpoint и теперь можно определить только хешу
+    sd_model_hash = get_request_sd_api("options").json()["sd_checkpoint_hash"]
+    sd_model = get_model_name_by_hash(sd_model_hash) 
     db_model = await db_service.db_get_sd_setting(tg_id, "sd_model")
+
     if db_model != sd_model:
         params = {
             "sd_model_checkpoint": db_model

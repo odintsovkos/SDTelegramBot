@@ -33,12 +33,13 @@ def get_request_sd_api(endpoint, is_logging=True):
 
     try:
         response = requests.get(url)
+        print(response,url)
         return response
     except requests.exceptions.ConnectionError:
         if is_logging:
             logging.critical("Ошибка запроса к SD API. Проверь SD")
         return None
-
+    
 
 def get_models_sd_api():
     return get_request_sd_api("sd-models").json()
@@ -58,3 +59,9 @@ def get_image_seed(image):
         if image_info[j].find("Seed:") != -1:
             return image_info[j][6:]
 
+def get_model_name_by_hash(hash):
+    models = get_models_sd_api()
+    for model in models:
+        if model['sha256'] == hash:
+            return model['model_name']
+    return None
