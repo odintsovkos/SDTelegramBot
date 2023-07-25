@@ -30,10 +30,8 @@ def post_request_sd_api(endpoint, params, is_logging=True):
 
 def get_request_sd_api(endpoint, is_logging=True):
     url = f"http://127.0.0.1:7860/sdapi/v1/{endpoint}"
-
     try:
         response = requests.get(url)
-        print(response,url)
         return response
     except requests.exceptions.ConnectionError:
         if is_logging:
