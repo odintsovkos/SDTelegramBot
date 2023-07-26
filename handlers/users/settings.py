@@ -20,8 +20,8 @@ from aiogram.types import Message, InlineKeyboardButton
 from aiogram.utils import markdown
 
 import settings.string_variables as str_var
-from keyboards.inline.inline_menu import settings_menu, gen_settings_menu, create_samplers_inline_keyboard, \
-    inline_cancel, wh_create_keyboards, hires_menu, main_menu
+from keyboards.inline.inline_menu import settings_menu, gen_settings_menu, \
+    inline_cancel, hires_menu, main_menu, create_samplers_keyboard, create_wh_keyboard
 from loader import dp
 from settings.bot_config import ADMINS
 from states.all_states import SDStates
@@ -145,7 +145,7 @@ async def generation_settings(callback: types.CallbackQuery):
 
 
 @dp.callback_query_handler(state=SDStates.gen_settings, text='negative_prompt')
-async def current_settings(callback: types.CallbackQuery):
+async def n_prompt_button_handler(callback: types.CallbackQuery):
     global callback_data
     callback_data = callback
     current_settings = await db_service.db_get_sd_settings(callback.from_user.id)
@@ -156,18 +156,19 @@ async def current_settings(callback: types.CallbackQuery):
 
 
 @dp.callback_query_handler(state=SDStates.gen_settings, text='sampler')
-async def current_settings(callback: types.CallbackQuery):
+async def sampler_button_handler(callback: types.CallbackQuery, state: FSMContext):
     global callback_data
     callback_data = callback
     current_settings = await db_service.db_get_sd_settings(callback.from_user.id)
-    sample_keyboard = await create_samplers_inline_keyboard()
+    await state.update_data(current_page=0)
+    sample_keyboard = await create_samplers_keyboard(state)
     await callback.message.edit_text(f"<b>Текущий Sampler:</b>\n <i>{current_settings['sd_sampler']}</i>\n"
                                      f"✏️ Выбери Sampler", reply_markup=sample_keyboard)
     await SDStates.settings_set_sampler.set()
 
 
 @dp.callback_query_handler(state=SDStates.gen_settings, text='steps')
-async def current_settings(callback: types.CallbackQuery):
+async def steps_button_handler(callback: types.CallbackQuery):
     global callback_data
     callback_data = callback
     current_settings = await db_service.db_get_sd_settings(callback.from_user.id)
@@ -177,18 +178,19 @@ async def current_settings(callback: types.CallbackQuery):
 
 
 @dp.callback_query_handler(state=SDStates.gen_settings, text='width_height')
-async def current_settings(callback: types.CallbackQuery):
+async def wh_button_handler(callback: types.CallbackQuery, state: FSMContext):
     global callback_data
     callback_data = callback
     current_settings = await db_service.db_get_sd_settings(callback.from_user.id)
-    width_height_keyboard = wh_create_keyboards()
+    await state.update_data(current_page=0)
+    width_height_keyboard = await create_wh_keyboard(state)
     await callback.message.edit_text(f"<b>Текущие Width x Height:</b>\n <i>{current_settings['sd_width_height']}</i>\n"
                                      f"✏️ Введи ширину и высоту, через 'x'", reply_markup=width_height_keyboard)
     await SDStates.settings_set_wh.set()
 
 
 @dp.callback_query_handler(state=SDStates.gen_settings, text='cfg_scale')
-async def current_settings(callback: types.CallbackQuery):
+async def cfg_scale_button_handler(callback: types.CallbackQuery):
     global callback_data
     callback_data = callback
     current_settings = await db_service.db_get_sd_settings(callback.from_user.id)
@@ -198,7 +200,7 @@ async def current_settings(callback: types.CallbackQuery):
 
 
 @dp.callback_query_handler(state=SDStates.gen_settings, text='batch_count')
-async def current_settings(callback: types.CallbackQuery):
+async def batch_count_button_handler(callback: types.CallbackQuery):
     global callback_data
     callback_data = callback
     current_settings = await db_service.db_get_sd_settings(callback.from_user.id)
@@ -208,29 +210,79 @@ async def current_settings(callback: types.CallbackQuery):
 
 
 @dp.callback_query_handler(Text(startswith="wh_"), state=SDStates.settings_set_wh)
-async def current_settings(callback: types.CallbackQuery):
+async def change_wh_handler(callback: types.CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    current_model_page = state_data.get('current_page')
+    num_pages = state_data.get('num_pages')
     action = callback.data.split("_")[1]
-    await db_service.db_set_sd_settings(callback.from_user.id, "sd_width_height", action)
-    await callback.message.edit_text(f"<b>Width x Height задан</b>", reply_markup=gen_settings_menu)
-    await SDStates.gen_settings.set()
+
+    if action == "prev_page":
+        if current_model_page > 0:
+            current_model_page -= 1
+            await state.update_data(current_page=current_model_page)
+            styles_keyboard = await create_wh_keyboard(state=state)
+            await callback.message.edit_text(f"Страница {current_model_page + 1} из {num_pages}",
+                                             reply_markup=styles_keyboard)
+        else:
+            await callback.answer()
+
+    elif action == "next_page":
+        if current_model_page < num_pages - 1:
+            current_model_page += 1
+            await state.update_data(current_page=current_model_page)
+            styles_keyboard = await create_wh_keyboard(state=state)
+            await callback.message.edit_text(f"Страница {current_model_page + 1} из {num_pages}",
+                                             reply_markup=styles_keyboard)
+        else:
+            await callback.answer()
+
+    else:
+        await db_service.db_set_sd_settings(callback.from_user.id, "sd_width_height", action[6:])
+        await callback.message.edit_text(f"<b>Width x Height задан</b>", reply_markup=gen_settings_menu)
+        await SDStates.gen_settings.set()
 
 
 @dp.callback_query_handler(Text(startswith="sampler_"), state=SDStates.settings_set_sampler)
-async def current_settings(callback: types.CallbackQuery):
+async def change_sampler_handler(callback: types.CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    current_model_page = state_data.get('current_page')
+    num_pages = state_data.get('num_pages')
     action = callback.data.split("_")[1]
-    await db_service.db_set_sd_settings(callback.from_user.id, "sd_sampler", action)
-    await callback.message.edit_text(f"<b>Sampler \"{action}\" задан</b>", reply_markup=gen_settings_menu)
-    await SDStates.gen_settings.set()
+
+    if action == "prev_page":
+        if current_model_page > 0:
+            current_model_page -= 1
+            await state.update_data(current_page=current_model_page)
+            styles_keyboard = await create_samplers_keyboard(state=state)
+            await callback.message.edit_text(f"Страница {current_model_page + 1} из {num_pages}",
+                                             reply_markup=styles_keyboard)
+        else:
+            await callback.answer()
+
+    elif action == "next_page":
+        if current_model_page < num_pages - 1:
+            current_model_page += 1
+            await state.update_data(current_page=current_model_page)
+            styles_keyboard = await create_samplers_keyboard(state=state)
+            await callback.message.edit_text(f"Страница {current_model_page + 1} из {num_pages}",
+                                             reply_markup=styles_keyboard)
+        else:
+            await callback.answer()
+
+    else:
+        await db_service.db_set_sd_settings(callback.from_user.id, "sd_sampler", action)
+        await callback.message.edit_text(f"<b>Sampler \"{action}\" задан</b>", reply_markup=gen_settings_menu)
+        await SDStates.gen_settings.set()
 
 
 @dp.callback_query_handler(state=SDStates.settings, text='reset_settings')
-async def current_settings(callback: types.CallbackQuery):
+async def reset_settings_handler(callback: types.CallbackQuery):
     await db_service.db_update_default_settings(callback.from_user.id)
     await callback.message.edit_text('🛠 Настройки сброшены', reply_markup=settings_menu)
 
 
 @dp.callback_query_handler(state=SDStates.settings, text='restart_sd')
-async def current_settings(callback: types.CallbackQuery):
+async def restart_sd_handler(callback: types.CallbackQuery):
     if check_sd_path():
         start_time = time.time()
         await callback.message.edit_text("Перезапуск SD начат...")

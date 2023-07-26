@@ -28,7 +28,7 @@ from aiogram import types
 from keyboards.inline import inline_menu
 from loader import dp
 from settings.bot_config import sd_path, send_photo_without_compression
-from settings.sd_config import save_files, output_folder
+from settings.sd_config import save_files, output_folder, adetailer_on
 from utils.db_services import db_service
 from utils.notifier import admin_notify, users_and_admins_notify
 from utils.progress_bar import progress_bar
@@ -57,9 +57,32 @@ async def generate_image(tg_id: int, last_prompt, seed):
         "hr_second_pass_steps": db_result[12],
         "denoising_strength": db_result[13],
         "hr_scale": db_result[14],
+
     }
     if save_files:
         api_service.post_request_sd_api("options", {"outdir_txt2img_samples": f"{output_folder}"})
+    if adetailer_on:
+        params.update({ "alwayson_scripts": {
+            "ADetailer": {
+                "args": [
+                    {
+                        "ad_model": "face_yolov8s.pt",
+                        "ad_prompt": "",
+                        "ad_negative_prompt": "",
+                        "ad_confidence": 0.3,
+                        "ad_mask_blur": 4,
+                        "ad_denoising_strength": 0.4,
+                        "ad_inpaint_width": 512,
+                        "ad_inpaint_height": 512,
+                        "ad_steps": 28,
+                    },
+                    # {
+                    #     "ad_model": "hand_yolov8n.pt",
+                    # }
+                ]
+            }
+        }
+        })
     response = api_service.post_request_sd_api("txt2img", params)
     return response
 
@@ -120,7 +143,7 @@ async def change_lora_db(tg_id: int, entered_lora):
 
 
 async def user_samplers(api_samplers, hide_user_samplers):
-    return [x for x in api_samplers if x['name'] not in hide_user_samplers]
+    return [x for x in api_samplers if x not in hide_user_samplers]
 
 
 async def reformat_lora(lora):
@@ -254,7 +277,7 @@ async def send_photo(message, user_id, last_prompt, response_list, with_seed=Fal
 
 async def restarting_sd(message):
     await message.message.edit_text("⛔️ SD не отвечает...\n🔃 Перезапускаю SD!",
-                                    reply_markup=main_menu)
+                                    reply_markup=inline_menu.main_menu)
     await restart_sd()
     start_time = time.time()
     while True:

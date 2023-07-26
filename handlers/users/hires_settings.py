@@ -16,11 +16,11 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.types import Message
 
+import settings.string_variables as str_var
 from keyboards.default import keyboards
 from keyboards.inline.inline_menu import inline_cancel, create_hr_upscalers_keyboard, hires_menu, settings_menu
 from loader import dp
 from states.all_states import SDStates
-import settings.string_variables as str_var
 from utils.db_services import db_service
 
 callback_data = None
@@ -106,11 +106,12 @@ async def current_settings(callback: types.CallbackQuery):
 
 
 @dp.callback_query_handler(state=SDStates.hr_settings, text='hr_upscaler')
-async def current_settings(callback: types.CallbackQuery):
+async def current_settings(callback: types.CallbackQuery, state: FSMContext):
     global callback_data
     callback_data = callback
+    await state.update_data(current_page=0)
     current_settings = await db_service.db_get_sd_settings(callback.from_user.id)
-    upscaler_keyboard = await create_hr_upscalers_keyboard()
+    upscaler_keyboard = await create_hr_upscalers_keyboard(state)
     await callback.message.edit_text(f"Текущий Upscaler: "
                                      f"{current_settings['sd_hr_upscaler']}\n"
                                      f"✏️ Выбери Upscaler", reply_markup=upscaler_keyboard)
@@ -151,8 +152,33 @@ async def current_settings(callback: types.CallbackQuery):
 
 
 @dp.callback_query_handler(Text(startswith="upscaler_"), state=SDStates.hr_change_upscaler)
-async def current_settings(callback: types.CallbackQuery):
+async def current_settings(callback: types.CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    current_model_page = state_data.get('current_page')
+    num_pages = state_data.get('num_pages')
     action = callback.data[9:]
-    await db_service.db_set_sd_settings(callback.from_user.id, "sd_hr_upscaler", action)
-    await callback.message.edit_text(f"<b>Upscaler \"{action}\" задан</b>", reply_markup=hires_menu)
-    await SDStates.hr_settings.set()
+
+    if action == "prev_page":
+        if current_model_page > 0:
+            current_model_page -= 1
+            await state.update_data(current_page=current_model_page)
+            styles_keyboard = await create_hr_upscalers_keyboard(state=state)
+            await callback.message.edit_text(f"Страница {current_model_page + 1} из {num_pages}",
+                                             reply_markup=styles_keyboard)
+        else:
+            await callback.answer()
+
+    elif action == "next_page":
+        if current_model_page < num_pages - 1:
+            current_model_page += 1
+            await state.update_data(current_page=current_model_page)
+            styles_keyboard = await create_hr_upscalers_keyboard(state=state)
+            await callback.message.edit_text(f"Страница {current_model_page + 1} из {num_pages}",
+                                             reply_markup=styles_keyboard)
+        else:
+            await callback.answer()
+
+    else:
+        await db_service.db_set_sd_settings(callback.from_user.id, "sd_hr_upscaler", action)
+        await callback.message.edit_text(f"<b>Upscaler \"{action}\" задан</b>", reply_markup=hires_menu)
+        await SDStates.hr_settings.set()

@@ -34,4 +34,4 @@ time_the_next_check_s = 1
 sd_path = """D:\PROJECTS\AI\stable-diffusion-webui"""
 
 # Отправить фото без сжатия
-send_photo_without_compression = True
+send_photo_without_compression = False

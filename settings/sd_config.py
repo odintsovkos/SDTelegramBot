@@ -20,6 +20,9 @@ save_files = False
 # Путь к папке для сохраненный изображений. Пример: "outputs/txt2img-images"
 output_folder = 'outputs/txt2img-images'
 
+# Включение дополнения ADetailer
+adetailer_on = True
+
 
 # Параметры по умолчанию
 def get_default_params(tg_id):
