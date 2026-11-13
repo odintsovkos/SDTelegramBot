@@ -65,7 +65,7 @@ if __name__ == '__main__':
                     except Exception as e:
                         logging.error(f"Ошибка подключения к Telegram: {e}")
                         time.sleep(5) # ожидание 5 секунд перед повторной попыткой
-            break
+                break
             time.sleep(time_the_next_check_s)
 
     elif is_wait_sd_launch:
@@ -83,6 +83,7 @@ if __name__ == '__main__':
                     except Exception as e:
                         logging.error(f"Ошибка подключения к Telegram: {e}")
                         time.sleep(5) # ожидание 5 секунд перед повторной попыткой
+                break
             logging.warning(f"LAUNCH ATTEMPT {count}, STABLE DIFFUSION NOT LAUNCHED!")
             count += 1
             time.sleep(time_the_next_check_s)
