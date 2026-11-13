@@ -44,7 +44,7 @@ async def generate_image(tg_id: int, last_prompt, seed):
     batch_size = 1             # количество потоков для генерации
     if batch_count % 2 == 0:    # если чётное
         batch_size = 2    # то в два потока и
-        batch_count /= 2   # в каждом потоке вдвое меньше картинок
+        batch_count //= 2   # в каждом потоке вдвое меньше картинок (целочисленное деление)
     params = {
         "prompt": last_prompt,
         "negative_prompt": db_result[4],
