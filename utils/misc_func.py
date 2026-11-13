@@ -262,7 +262,7 @@ async def send_photo(message, user_id, last_prompt, response_list, with_seed=Fal
                     count += 1
                 await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
                 await message.answer_media_group(media=media) # группа фото с "группой" аннотациий
-                seeds = '\n'.join(seed_list)
+#                seeds = '\n'.join(seed_list)  # отладочный вывод сидов отдельным сообщением (закомментирован)
 #                await message.answer(seeds)
                 await message.answer(f"📖 Меню генерации", reply_markup=inline_menu.main_menu)
             except Exception as err:
