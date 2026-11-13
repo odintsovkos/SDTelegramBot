@@ -40,6 +40,11 @@ last_seed = ""
 
 async def generate_image(tg_id: int, last_prompt, seed):
     db_result = await db_service.db_get_sd_settings(tg_id)
+    batch_count = db_result[9] # количество картинок (n_iter в API)
+    batch_size = 1             # количество потоков для генерации
+    if batch_count % 2 == 0:    # если чётное
+        batch_size = 2    # то в два потока и
+        batch_count //= 2   # в каждом потоке вдвое меньше картинок (целочисленное деление)
     params = {
         "prompt": last_prompt,
         "negative_prompt": db_result[4],
@@ -49,7 +54,8 @@ async def generate_image(tg_id: int, last_prompt, seed):
         "width": int(db_result[7].split('x')[0]),
         "height": int(db_result[7].split('x')[1]),
         "sampler_name": db_result[5],
-        "batch_size": db_result[9],
+        "n_iter": batch_count,
+        "batch_size": batch_size,
         "save_images": 'true' if save_files else 'false',
         "seed": seed,
         "enable_hr": db_result[10],
@@ -66,7 +72,7 @@ async def generate_image(tg_id: int, last_prompt, seed):
             "ADetailer": {
                 "args": [
                     {
-                        "ad_model": "face_yolov8s.pt",
+                        "ad_model": "face_yolov8n.pt",
                         "ad_prompt": "",
                         "ad_negative_prompt": "",
                         "ad_confidence": 0.3,
@@ -76,9 +82,9 @@ async def generate_image(tg_id: int, last_prompt, seed):
                         "ad_inpaint_height": 512,
                         "ad_steps": 28,
                     },
-                    # {
-                    #     "ad_model": "hand_yolov8n.pt",
-                    # }
+                    {
+                        "ad_model": "None",
+                    }
                 ]
             }
         }
@@ -212,6 +218,8 @@ async def send_photo(message, user_id, last_prompt, response_list, with_seed=Fal
         last_prompt = last_seed + "&" + last_prompt
     sd_model = await change_sd_model(user_id)
     lora = await db_service.db_get_sd_setting(user_id, 'sd_lora')
+    sd_sampler = await db_service.db_get_sd_setting(user_id, 'sd_sampler')
+#    batch_count = await db_service.db_get_sd_setting(user_id, 'sd_batch_count')
     reform_lora = await reformat_lora(lora)
     seed, prompt = await message_parse(last_prompt)
     thread_generate_image = threading.Thread(target=generate_image_callback, args=(
@@ -226,7 +234,8 @@ async def send_photo(message, user_id, last_prompt, response_list, with_seed=Fal
     style_caption = f"\n<b>Styles: </b><i>{style.replace('&', ', ')}</i>"
     lora_caption = f"\n<b>LoRa: </b><i>{lora.replace('&', ', ')}</i>"
     caption = f"<b>Positive prompt:</b>\n<code>{prompt}</code>\n" \
-              f"<b>Model:</b>\n<i>{sd_model}</i>"
+              f"<b>Model: </b><i>{sd_model}</i>\n" \
+              f"<b>Sampler: </b><i>{sd_sampler}</i>"
     if style != '':
         caption += style_caption
     if lora != '':
@@ -234,19 +243,27 @@ async def send_photo(message, user_id, last_prompt, response_list, with_seed=Fal
 
     if response_list[0] is not None and "error" not in response_list[0].keys():
         media = types.MediaGroup()
+#        await message.answer(f"Count images: "+str(len(response_list[0]['images'])))
         if len(response_list[0]['images']) > 1:
             try:
                 count = 1
+                seed_list = []  # Создаем список для хранения описаний
                 for i in response_list[0]['images']:
                     image = types.InputFile(io.BytesIO(base64.b64decode(i.split(",", 1)[0])))
-                    media.attach_photo(image)
                     image_seed = api_service.get_image_seed(i)
-                    last_seed = image_seed
-                    caption += f"\n<b>Seed {count}:</b> <code>{image_seed}</code>"
+                    if count == 1:
+                        last_seed = image_seed # запоминаем базовый сид в серии для повтора и указываем его как базовый
+                        caption += f"\n<b>Base seed: </b><code>{image_seed}</code>"
+                        media.attach_photo(image, caption=caption) # заносим caption в первое фото для показа для группы
+                    else:
+                        media.attach_photo(image)
+                    seed_list.append(f"<b>Seed {count}:</b> <code>{image_seed}</code>")  # Добавляем сиды в список
+#                    caption += f"\n<b>Seed {count}:</b> <code>{image_seed}</code>"
                     count += 1
                 await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
-                await message.answer_media_group(media=media)
-                await message.answer(caption)
+                await message.answer_media_group(media=media) # группа фото с "группой" аннотациий
+#                seeds = '\n'.join(seed_list)  # отладочный вывод сидов отдельным сообщением (закомментирован)
+#                await message.answer(seeds)
                 await message.answer(f"📖 Меню генерации", reply_markup=inline_menu.main_menu)
             except Exception as err:
                 await message.answer("Ошибка генерации фото, информация об ошибке уже передана администраторам",
@@ -258,14 +275,15 @@ async def send_photo(message, user_id, last_prompt, response_list, with_seed=Fal
                 image = types.InputFile(io.BytesIO(base64.b64decode(i.split(",", 1)[0])),
                                         filename=f"{prompt}_{image_seed}_{datetime.date.today()}.jpg")
 
-                last_seed = image_seed
+                last_seed = image_seed   # если одно фото - тот же сид
+#                last_seed = str(int(image_seed) - batch_count + 1)  # если генерировали по несколько фото, то для повтора с теми же сидами надо отмотать на начальный сид
                 caption += f"\n<b>Seed:</b> <code>{image_seed}</code>"
                 await message.bot.delete_message(chat_id=chat_id, message_id=message_id)
                 last_image = copy.deepcopy(image)
-                await message.answer_photo(photo=image)
+                await message.answer_photo(photo=image, caption=caption) # фото с аннотацией
                 if send_photo_without_compression:
                     await message.answer_document(last_image)
-                await message.answer(caption)
+#                await message.answer(caption)
                 await message.answer(f"📖 Меню генерации", reply_markup=inline_menu.main_menu)
     else:
         await message.answer("Ошибка генерации фото, информация об ошибке уже передана администраторам",

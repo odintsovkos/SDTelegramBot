@@ -40,7 +40,14 @@ if __name__ == '__main__':
     start_time = time.time()
 
     if is_sd_launched():
-        executor.start_polling(dp, on_startup=on_startup)
+        while True:
+            try:
+                executor.start_polling(dp, on_startup=on_startup)
+                break
+            except Exception as e:
+                logging.error(f"Ошибка подключения к Telegram: {e}")
+                time.sleep(5) # ожидание 5 секунд перед повторной попыткой
+#        executor.start_polling(dp, on_startup=on_startup)
 
     elif launch_sd_at_bot_started and check_sd_path():
         start_sd_process()
@@ -51,7 +58,13 @@ if __name__ == '__main__':
                 current_time = time.time()
                 logging.info(f"SD запущена - {int(current_time - start_time)}s.")
 
-                executor.start_polling(dp, on_startup=on_startup)
+                while True:
+                    try:
+                        executor.start_polling(dp, on_startup=on_startup)
+                        break
+                    except Exception as e:
+                        logging.error(f"Ошибка подключения к Telegram: {e}")
+                        time.sleep(5) # ожидание 5 секунд перед повторной попыткой
                 break
             time.sleep(time_the_next_check_s)
 
@@ -63,7 +76,13 @@ if __name__ == '__main__':
                 current_time = time.time()
                 logging.info(f"SD запущена - {int(current_time - start_time)}s.")
 
-                executor.start_polling(dp, on_startup=on_startup)
+                while True:
+                    try:
+                        executor.start_polling(dp, on_startup=on_startup)
+                        break
+                    except Exception as e:
+                        logging.error(f"Ошибка подключения к Telegram: {e}")
+                        time.sleep(5) # ожидание 5 секунд перед повторной попыткой
                 break
             logging.warning(f"LAUNCH ATTEMPT {count}, STABLE DIFFUSION NOT LAUNCHED!")
             count += 1
