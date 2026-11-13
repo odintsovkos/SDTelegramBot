@@ -18,10 +18,11 @@ from utils.sd_api import api_service
 save_files = False
 
 # Путь к папке для сохраненный изображений. Пример: "outputs/txt2img-images"
-output_folder = 'outputs/txt2img-images'
+output_folder = 'outputs/txt2img-users'
 
 # Включение дополнения ADetailer
-adetailer_on = True
+adetailer_on = False
+translate_on = True
 
 
 # Параметры по умолчанию
@@ -36,16 +37,16 @@ def get_default_params(tg_id):
                                  'extra limb,missing limb,'
                                  'floating limbs,(mutated hands and fingers:1.4),disconnected limbs,mutation,mutated,'
                                  'ugly,disgusting,'
-                                 'blurry,amputation',
+                                 'blurry,amputation,asian,',
               "sampler_name": 'Euler a',
               "steps": 22,
-              "width_height": '640x640',
+              "width_height": '576x768',
               "cfg_scale": '7.0',
-              "batch_count": 1,
+              "batch_count": 3,
               "enable_hr": 0,
               "hr_upscaler": upscalers[1]['name'],
               "hr_second_pass_steps": 12,
               "denoising_strength": 0.2,
-              "hr_scale": 2}
+              "hr_scale": 1.5}
 
     return params

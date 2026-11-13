@@ -31,7 +31,7 @@ launch_sd_at_bot_started = True
 is_wait_sd_launch = True
 time_the_next_check_s = 1
 
-sd_path = """D:\PROJECTS\AI\stable-diffusion-webui"""
+sd_path = """E:\stable"""
 
 # Отправить фото без сжатия
 send_photo_without_compression = False
